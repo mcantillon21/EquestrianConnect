@@ -2,9 +2,9 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(AuthManager.self) private var auth
+    @Environment(MessagesViewModel.self) private var messagesVM
     @State private var vm = DashboardViewModel()
     @State private var horsesVM = HorsesViewModel()
-    @State private var messagesVM = MessagesViewModel()
     @State private var selectedEvent: CalendarEvent?
     @State private var selectedConv: Conversation?
 

@@ -8,6 +8,10 @@ final class MessagesViewModel {
     var isLoading = false
     var error: String?
 
+    var totalUnreadCount: Int {
+        conversations.reduce(0) { $0 + ($1.unread_count ?? 0) }
+    }
+
     private let client = Base44Client.shared
     private var pollingTask: Task<Void, Never>?
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ConversationsView: View {
     @Environment(AuthManager.self) private var auth
-    @State private var vm = MessagesViewModel()
+    @Environment(MessagesViewModel.self) private var vm
     @State private var showNewConv = false
     @State private var selectedConv: Conversation?
 

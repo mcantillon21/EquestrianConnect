@@ -3,15 +3,17 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(AuthManager.self) private var auth
     @State private var selectedTab = 0
+    @State private var messagesVM = MessagesViewModel()
 
     var body: some View {
         Group {
             if auth.user?.isTrainer == true {
-                TrainerTabView(selectedTab: $selectedTab)
+                TrainerTabView(selectedTab: $selectedTab, messagesVM: messagesVM)
             } else {
-                OwnerTabView(selectedTab: $selectedTab)
+                OwnerTabView(selectedTab: $selectedTab, messagesVM: messagesVM)
             }
         }
+        .environment(messagesVM)
         .onAppear { styleTabBar() }
     }
 
@@ -43,6 +45,7 @@ struct MainTabView: View {
 
 private struct OwnerTabView: View {
     @Binding var selectedTab: Int
+    let messagesVM: MessagesViewModel
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -57,6 +60,7 @@ private struct OwnerTabView: View {
                 .tag(2)
             ConversationsView()
                 .tabItem { Label("Messages", systemImage: "message.fill") }
+                .badge(messagesVM.totalUnreadCount > 0 ? messagesVM.totalUnreadCount : 0)
                 .tag(3)
             OwnerMoreView()
                 .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
@@ -71,6 +75,7 @@ private struct OwnerTabView: View {
 
 private struct TrainerTabView: View {
     @Binding var selectedTab: Int
+    let messagesVM: MessagesViewModel
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -85,6 +90,7 @@ private struct TrainerTabView: View {
                 .tag(2)
             ConversationsView()
                 .tabItem { Label("Messages", systemImage: "message.fill") }
+                .badge(messagesVM.totalUnreadCount > 0 ? messagesVM.totalUnreadCount : 0)
                 .tag(3)
             TrainerMoreView()
                 .tabItem { Label("More", systemImage: "ellipsis.circle.fill") }
