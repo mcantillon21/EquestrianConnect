@@ -8,6 +8,8 @@ struct HorseDocument: Codable, Identifiable, Hashable {
     var date: String?    // ISO 8601 date string
     var notes: String?
     var file_url: String?
+    var file_name: String?   // filename when a non-image file is attached
+    var imageData: Data?     // JPEG/PNG photo of a physical document
     var uploaded_by: String?
     var created_date: String?
 
