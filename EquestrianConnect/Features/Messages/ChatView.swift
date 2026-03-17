@@ -4,8 +4,6 @@ struct ChatView: View {
     let conversation: Conversation
     let vm: MessagesViewModel
     @Environment(AuthManager.self) private var auth
-    @State private var messageText = ""
-    @State private var isSending = false
     @State private var error: String?
 
     private var myEmail: String { auth.user?.email ?? "" }
@@ -21,36 +19,21 @@ struct ChatView: View {
                     ErrorBanner(message: err) { error = nil }
                 }
 
-                // Messages list
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: EQSpacing.sm) {
-                            ForEach(messages) { message in
-                                MessageBubble(
-                                    message: message,
-                                    isFromMe: message.sender_email == myEmail
-                                )
-                                .id(message.id)
-                            }
-                        }
-                        .padding(.horizontal, EQSpacing.md)
-                        .padding(.vertical, EQSpacing.md)
-                    }
-                    .onChange(of: messages.count) { _, _ in
-                        if let last = messages.last {
-                            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
-                        }
-                    }
-                    .onAppear {
-                        if let last = messages.last {
-                            proxy.scrollTo(last.id, anchor: .bottom)
-                        }
-                    }
-                }
+                // Messages list — isolated struct so input bar state never triggers its re-render
+                MessagesList(messages: messages)
 
-                // Input Bar
+                // Input bar — owns its own @State so typing only re-renders this view
                 EQDivider()
-                inputBar
+                ChatInputBar { content in
+                    try await vm.sendMessage(
+                        conversationId: conversation.id,
+                        content: content,
+                        senderEmail: myEmail,
+                        recipientEmail: otherEmail
+                    )
+                } onError: { msg in
+                    error = msg
+                }
             }
         }
         .navigationTitle(otherEmail)
@@ -62,10 +45,57 @@ struct ChatView: View {
         }
         .onDisappear { vm.stopPolling() }
     }
+}
 
-    private var inputBar: some View {
+// MARK: - Messages List
+// Separate struct — only re-renders when messages array changes, never during typing.
+
+private struct MessagesList: View {
+    let messages: [Message]
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: EQSpacing.sm) {
+                    ForEach(messages) { message in
+                        MessageBubble(message: message)
+                            .id(message.id)
+                    }
+                }
+                .padding(.horizontal, EQSpacing.md)
+                .padding(.vertical, EQSpacing.md)
+            }
+            .onChange(of: messages.count) { _, _ in
+                if let last = messages.last {
+                    withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                }
+            }
+            .onAppear {
+                if let last = messages.last {
+                    proxy.scrollTo(last.id, anchor: .bottom)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Input Bar
+// Owns messageText as @State — typing only re-renders this view, not the message list.
+
+private struct ChatInputBar: View {
+    let onSend: (String) async throws -> Void
+    let onError: (String) -> Void
+
+    @State private var text = ""
+    @State private var isSending = false
+
+    private var isEmpty: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
         HStack(spacing: EQSpacing.sm) {
-            TextField("Message…", text: $messageText, axis: .vertical)
+            TextField("Message…", text: $text, axis: .vertical)
                 .font(.body)
                 .foregroundStyle(Color.eqDarkBrown)
                 .padding(.horizontal, EQSpacing.md)
@@ -79,46 +109,39 @@ struct ChatView: View {
                 .lineLimit(4)
 
             Button {
-                send()
+                Task { await send() }
             } label: {
                 ZStack {
                     Circle()
-                        .fill(messageText.isEmpty ? AnyShapeStyle(Color.eqLightTan) : AnyShapeStyle(LinearGradient.eqHero))
+                        .fill(isEmpty ? AnyShapeStyle(Color.eqLightTan) : AnyShapeStyle(LinearGradient.eqHero))
                         .frame(width: 40, height: 40)
                     Image(systemName: "arrow.up")
                         .font(.body.weight(.bold))
                         .foregroundStyle(.white)
                 }
             }
-            .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+            .disabled(isEmpty || isSending)
         }
         .padding(.horizontal, EQSpacing.md)
         .padding(.vertical, EQSpacing.sm)
         .background(Color.eqWarmWhite)
     }
 
-    private func send() {
-        let content = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func send() async {
+        let content = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
         HapticFeedback.impact(.medium)
-        messageText = ""
+        text = ""
         isSending = true
-        Task {
-            do {
-                try await vm.sendMessage(
-                    conversationId: conversation.id,
-                    content: content,
-                    senderEmail: myEmail,
-                    recipientEmail: otherEmail
-                )
-                HapticFeedback.success()
-            } catch {
-                self.error = error.localizedDescription
-                messageText = content  // restore on failure
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
-            }
-            isSending = false
+        do {
+            try await onSend(content)
+            HapticFeedback.success()
+        } catch {
+            text = content  // restore on failure
+            onError(error.localizedDescription)
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
         }
+        isSending = false
     }
 }
 
@@ -126,7 +149,11 @@ struct ChatView: View {
 
 private struct MessageBubble: View {
     let message: Message
-    let isFromMe: Bool
+    @Environment(AuthManager.self) private var auth
+
+    private var isFromMe: Bool {
+        message.sender_email == (auth.user?.email ?? "")
+    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: EQSpacing.sm) {
@@ -144,9 +171,7 @@ private struct MessageBubble: View {
                                 ? AnyShapeStyle(LinearGradient.eqHero)
                                 : AnyShapeStyle(Color.eqCream)
                         )
-                        .clipShape(
-                            RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
-                        )
+                        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
                         .overlay(
                             !isFromMe ? RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
                                 .strokeBorder(Color.eqLightTan, lineWidth: 1) : nil
