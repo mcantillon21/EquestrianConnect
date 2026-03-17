@@ -153,7 +153,12 @@ final class AuthManager {
     private func finishAuth(response: LoginResponse) async {
         if let token = response.access_token { client.token = token }
         do {
-            let me: User = response.user ?? (try await client.me())
+            let me: User
+            if let u = response.user {
+                me = u
+            } else {
+                me = try await client.me()
+            }
             await MainActor.run { user = me; isLoading = false }
         } catch {
             await MainActor.run { self.error = error.localizedDescription; isLoading = false }
