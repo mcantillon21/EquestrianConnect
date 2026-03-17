@@ -8,8 +8,9 @@ struct OTPVerificationView: View {
     @State private var isVerifying = false
     @State private var isResending = false
     @State private var errorMessage: String?
-    @State private var resendCooldown = 0       // seconds remaining
     @State private var successMessage: String?
+    @State private var resendCooldown = 0
+    @FocusState private var fieldFocused: Bool
 
     private let codeLength = 6
 
@@ -55,27 +56,26 @@ struct OTPVerificationView: View {
                         }
                         if let msg = successMessage {
                             HStack(spacing: EQSpacing.sm) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
+                                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                                 Text(msg)
                                     .font(.eqFont(14, weight: .medium))
                                     .foregroundStyle(Color.eqDarkBrown)
                             }
                             .padding(EQSpacing.sm)
                             .frame(maxWidth: .infinity)
-                            .background(Color.green.opacity(0.1), in: RoundedRectangle(cornerRadius: EQRadius.sm))
+                            .background(Color.green.opacity(0.1),
+                                        in: RoundedRectangle(cornerRadius: EQRadius.sm))
                         }
 
-                        // Digit boxes
                         digitBoxes
                             .padding(.vertical, EQSpacing.sm)
+                            .onTapGesture { fieldFocused = true }
 
                         EQPrimaryButton(title: "Verify Email", isLoading: isVerifying) {
                             submit()
                         }
                         .disabled(code.count < codeLength)
 
-                        // Resend
                         resendButton
                     }
                     .padding(EQSpacing.lg)
@@ -86,7 +86,6 @@ struct OTPVerificationView: View {
                     )
                     .padding(.horizontal, EQSpacing.md)
 
-                    // Wrong email?
                     Button {
                         auth.pendingVerificationEmail = nil
                     } label: {
@@ -98,58 +97,49 @@ struct OTPVerificationView: View {
                 }
             }
         }
-        .onAppear { startResendCooldown(seconds: 30) }
+        .onAppear {
+            fieldFocused = true
+            startResendCooldown(seconds: 30)
+        }
         .onChange(of: code) { _, newVal in
-            // Auto-submit when all 6 digits are entered
-            if newVal.count == codeLength { submit() }
+            // Strip non-digits and cap at 6 characters
+            let digits = String(newVal.filter(\.isNumber).prefix(codeLength))
+            if digits != newVal { code = digits }
+            if digits.count == codeLength { submit() }
         }
     }
 
-    // MARK: Digit Boxes
+    // MARK: - Digit boxes
 
     private var digitBoxes: some View {
         ZStack {
-            // Hidden real text field that drives the boxes
+            // Hidden text field that receives keyboard input
             TextField("", text: $code)
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
+                .focused($fieldFocused)
                 .frame(width: 1, height: 1)
-                .opacity(0.01)
-                .id("otpField")
+                .opacity(0.011)
+                .allowsHitTesting(false)
 
-            HStack(spacing: EQSpacing.sm) {
-                ForEach(0..<codeLength, id: \.self) { i in
-                    let char: String = i < code.count
-                        ? String(code[code.index(code.startIndex, offsetBy: i)])
-                        : ""
-                    let isFocused = i == min(code.count, codeLength - 1)
-
-                    ZStack {
-                        RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
-                            .fill(Color.eqWarmWhite)
-                            .stroke(
-                                isFocused && code.count < codeLength
-                                    ? Color.eqSaddleBrown
-                                    : Color.eqTaupe.opacity(0.4),
-                                lineWidth: isFocused && code.count < codeLength ? 2 : 1
-                            )
-                            .frame(width: 44, height: 54)
-
-                        Text(char)
-                            .font(.eqFont(22, weight: .bold))
-                            .foregroundStyle(Color.eqDarkBrown)
-                    }
+            // Visible digit display
+            HStack(spacing: 10) {
+                ForEach(0..<codeLength, id: \.self) { index in
+                    DigitBox(
+                        digit: digit(at: index),
+                        isActive: index == code.count && fieldFocused
+                    )
                 }
             }
         }
-        .onTapGesture {
-            // Bring up keyboard when tapping the box area
-            UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder),
-                                            to: nil, from: nil, for: nil)
-        }
     }
 
-    // MARK: Resend Button
+    private func digit(at index: Int) -> String {
+        guard index < code.count else { return "" }
+        return String(code[code.index(code.startIndex, offsetBy: index)])
+    }
+
+    // MARK: - Resend button
 
     @ViewBuilder
     private var resendButton: some View {
@@ -158,14 +148,13 @@ struct OTPVerificationView: View {
                 .font(.eqFont(14, weight: .regular))
                 .foregroundStyle(Color.eqMuted)
         } else {
-            Button {
-                resend()
-            } label: {
-                HStack(spacing: 4) {
+            Button { resend() } label: {
+                HStack(spacing: 6) {
                     if isResending {
                         ProgressView()
                             .progressViewStyle(.circular)
-                            .scaleEffect(0.7)
+                            .scaleEffect(0.75)
+                            .tint(Color.eqSaddleBrown)
                     }
                     Text(isResending ? "Sending…" : "Resend code")
                         .font(.eqFont(14, weight: .semibold))
@@ -176,20 +165,22 @@ struct OTPVerificationView: View {
         }
     }
 
-    // MARK: Actions
+    // MARK: - Actions
 
     private func submit() {
-        let trimmed = code.trimmingCharacters(in: .whitespaces)
-        guard trimmed.count == codeLength, !isVerifying else { return }
+        guard code.count == codeLength, !isVerifying else { return }
         isVerifying = true
         errorMessage = nil
+        fieldFocused = false
         Task {
             do {
-                try await auth.verifyOTP(email: email, code: trimmed)
-                // auth.user will be set — ContentView transitions automatically
+                try await auth.verifyOTP(email: email, code: code)
             } catch {
-                errorMessage = error.localizedDescription
-                code = ""
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    code = ""
+                    fieldFocused = true
+                }
             }
             isVerifying = false
         }
@@ -202,10 +193,12 @@ struct OTPVerificationView: View {
         Task {
             do {
                 try await auth.resendOTP(email: email)
-                successMessage = "New code sent!"
-                startResendCooldown(seconds: 60)
+                await MainActor.run {
+                    successMessage = "New code sent!"
+                    startResendCooldown(seconds: 60)
+                }
             } catch {
-                errorMessage = error.localizedDescription
+                await MainActor.run { errorMessage = error.localizedDescription }
             }
             isResending = false
         }
@@ -222,17 +215,39 @@ struct OTPVerificationView: View {
     }
 }
 
-// MARK: - Stroke helper
+// MARK: - Single digit box
 
-private extension RoundedRectangle {
-    func stroke(_ color: Color, lineWidth: CGFloat) -> some View {
-        self.overlay(
-            RoundedRectangle(cornerRadius: 0) // placeholder — see below
-                .strokeBorder(color, lineWidth: lineWidth)
-        )
+private struct DigitBox: View {
+    let digit: String
+    let isActive: Bool
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                .fill(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                        .strokeBorder(
+                            isActive ? Color.eqSaddleBrown : Color.eqTaupe.opacity(0.4),
+                            lineWidth: isActive ? 2 : 1
+                        )
+                )
+                .shadow(color: Color.eqInk.opacity(isActive ? 0.08 : 0.03), radius: 6, x: 0, y: 2)
+
+            if digit.isEmpty && isActive {
+                // Blinking cursor
+                Rectangle()
+                    .fill(Color.eqSaddleBrown)
+                    .frame(width: 2, height: 24)
+                    .opacity(isActive ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.6).repeatForever(), value: isActive)
+            } else {
+                Text(digit)
+                    .font(.eqFont(22, weight: .bold))
+                    .foregroundStyle(Color.eqDarkBrown)
+            }
+        }
+        .frame(width: 44, height: 54)
+        .animation(.easeInOut(duration: 0.15), value: isActive)
     }
-}
-
-private extension View {
-    func stroke(_ color: Color, lineWidth: CGFloat) -> some View { self }
 }

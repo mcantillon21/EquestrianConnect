@@ -149,6 +149,26 @@ def run(email, password):
     else:
         fail(f"Token no longer valid (HTTP {status}) — sessions may be very short-lived")
 
+    # ── 6. OTP endpoints ──────────────────────────────────────────────────────
+    section("6. OTP endpoints (verify-otp / resend-otp)")
+    # verify-otp with wrong code — expect "Invalid verification code"
+    status, resp = api("POST", f"/apps/{APP_ID}/auth/verify-otp",
+                       body={"email": email, "otp_code": "000000"})
+    msg = resp.get("message", "") if isinstance(resp, dict) else ""
+    if status in (400, 422) or (status == 200 and not resp.get("access_token")):
+        ok(f"verify-otp endpoint exists (wrong-code response: {msg[:60]})")
+    elif "invalid" in msg.lower() or "attempts" in msg.lower():
+        ok(f"verify-otp endpoint exists and validates codes ({msg[:60]})")
+    else:
+        fail(f"verify-otp unexpected response HTTP {status}: {resp}")
+
+    # resend-otp
+    status, resp = api("POST", f"/apps/{APP_ID}/auth/resend-otp", body={"email": email})
+    if status == 200:
+        ok(f"resend-otp works: {resp.get('message','')}")
+    else:
+        fail(f"resend-otp HTTP {status}: {resp}")
+
     print("\n\u2500\u2500 All tests complete \u2500\u2500\n")
 
 

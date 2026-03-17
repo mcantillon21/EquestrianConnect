@@ -10,6 +10,8 @@ struct ContentView: View {
                 SimulatorTestHarness()
             } else if auth.isLoading {
                 SplashView()
+            } else if let email = auth.pendingVerificationEmail {
+                OTPVerificationView(email: email)
             } else if !auth.isAuthenticated {
                 LoginView()
             } else if auth.needsRoleSelection {
@@ -20,6 +22,8 @@ struct ContentView: View {
             #else
             if auth.isLoading {
                 SplashView()
+            } else if let email = auth.pendingVerificationEmail {
+                OTPVerificationView(email: email)
             } else if !auth.isAuthenticated {
                 LoginView()
             } else if auth.needsRoleSelection {
