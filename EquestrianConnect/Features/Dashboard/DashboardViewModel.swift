@@ -196,23 +196,43 @@ final class DashboardViewModel {
                           recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
         ]
 
-        recentConversations = [
-            Conversation(id: "c1",
-                         participants: ["preview@eq.app", "sarah.trainer@barn.com"],
-                         horse_id: nil, last_message: "See you Thursday at 9am!",
-                         last_message_date: past(2),
-                         unread_count: 2, created_date: nil),
-            Conversation(id: "c2",
-                         participants: ["preview@eq.app", "dr.miller@vetclinic.com"],
-                         horse_id: "h3", last_message: "Storm's bloodwork came back clean",
-                         last_message_date: past(20),
-                         unread_count: 0, created_date: nil),
-            Conversation(id: "c3",
-                         participants: ["preview@eq.app", "mike.barn@rollinghills.com"],
-                         horse_id: nil, last_message: "Hay delivery confirmed for Friday",
-                         last_message_date: past(48),
-                         unread_count: 0, created_date: nil),
-        ]
+        if isTrainer {
+            recentConversations = [
+                Conversation(id: "c1",
+                             participants: ["preview@eq.app", "jordan@eq.app"],
+                             horse_id: "h1", last_message: "How did Midnight do in her lesson?",
+                             last_message_date: past(1),
+                             unread_count: 2, created_date: nil),
+                Conversation(id: "c2",
+                             participants: ["preview@eq.app", "sarah@eq.app"],
+                             horse_id: "h2", last_message: "Arrow is ready for the show!",
+                             last_message_date: past(5),
+                             unread_count: 1, created_date: nil),
+                Conversation(id: "c3",
+                             participants: ["preview@eq.app", "mike@eq.app"],
+                             horse_id: "h3", last_message: "Can we reschedule Tuesday's session?",
+                             last_message_date: past(24),
+                             unread_count: 0, created_date: nil),
+            ]
+        } else {
+            recentConversations = [
+                Conversation(id: "c1",
+                             participants: ["preview@eq.app", "sarah.trainer@barn.com"],
+                             horse_id: nil, last_message: "See you Thursday at 9am!",
+                             last_message_date: past(2),
+                             unread_count: 2, created_date: nil),
+                Conversation(id: "c2",
+                             participants: ["preview@eq.app", "dr.miller@vetclinic.com"],
+                             horse_id: "h3", last_message: "Storm's bloodwork came back clean",
+                             last_message_date: past(20),
+                             unread_count: 0, created_date: nil),
+                Conversation(id: "c3",
+                             participants: ["preview@eq.app", "mike.barn@rollinghills.com"],
+                             horse_id: nil, last_message: "Hay delivery confirmed for Friday",
+                             last_message_date: past(48),
+                             unread_count: 0, created_date: nil),
+            ]
+        }
 
         isLoading = false
     }

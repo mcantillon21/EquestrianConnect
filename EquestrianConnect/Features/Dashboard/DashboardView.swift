@@ -85,11 +85,16 @@ struct DashboardView: View {
 
             // Horses
             if !vm.horses.isEmpty {
-                groupedSection(title: "Horses", moreCount: vm.horses.count > 3 ? vm.horses.count : nil, moreDestination: AnyView(HorsesView())) {
+                let isTrainer = auth.user?.isTrainer == true
+                groupedSection(
+                    title: isTrainer ? "Client Horses" : "My Horses",
+                    moreCount: vm.horses.count > 3 ? vm.horses.count : nil,
+                    moreDestination: AnyView(HorsesView())
+                ) {
                     let horses = Array(vm.horses.prefix(3))
                     ForEach(horses) { horse in
                         NavigationLink(value: horse) {
-                            DashboardHorseRow(horse: horse)
+                            DashboardHorseRow(horse: horse, showOwner: isTrainer)
                         }
                         .buttonStyle(.eqPress)
                         if horse.id != horses.last?.id {
@@ -262,6 +267,7 @@ private struct HeroHeader: View {
 
 private struct DashboardHorseRow: View {
     let horse: Horse
+    var showOwner: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -282,7 +288,11 @@ private struct DashboardHorseRow: View {
                 Text(horse.displayName)
                     .font(.eqFont(15, weight: .semibold))
                     .foregroundStyle(Color.eqInk)
-                if let breed = horse.breed {
+                if showOwner, let owner = horse.owner_email {
+                    Text("Owner: \(owner)")
+                        .font(.eqFont(12, weight: .regular))
+                        .foregroundStyle(Color.eqMuted)
+                } else if let breed = horse.breed {
                     Text("\(breed) · \(horse.genderLabel)")
                         .font(.eqFont(12, weight: .regular))
                         .foregroundStyle(Color.eqMuted)
@@ -290,6 +300,12 @@ private struct DashboardHorseRow: View {
             }
 
             Spacer()
+
+            if let breed = horse.breed, showOwner {
+                Text(breed)
+                    .font(.eqFont(11, weight: .regular))
+                    .foregroundStyle(Color.eqMuted.opacity(0.7))
+            }
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 11, weight: .semibold))
