@@ -17,6 +17,10 @@ final class MessagesViewModel {
         loadSimulatorMock()
         return
         #endif
+        if isDemoMode {
+            loadSimulatorMock()
+            return
+        }
         isLoading = true
         error = nil
         do {
@@ -31,7 +35,6 @@ final class MessagesViewModel {
         isLoading = false
     }
 
-    #if targetEnvironment(simulator)
     @MainActor
     private func loadSimulatorMock() {
         let cal = Calendar.current
@@ -115,7 +118,6 @@ final class MessagesViewModel {
         ]
         isLoading = false
     }
-    #endif
 
     func loadMessages(conversationId: String) async {
         do {

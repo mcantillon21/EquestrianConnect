@@ -25,6 +25,10 @@ final class HorsesViewModel {
         await MainActor.run { loadSimulatorMock(isTrainer: isTrainer) }
         return
         #endif
+        if isDemoMode {
+            await MainActor.run { loadSimulatorMock(isTrainer: isTrainer) }
+            return
+        }
         await MainActor.run { isLoading = true; error = nil }
         do {
             let field = isTrainer ? "trainer_email" : "owner_email"
@@ -41,7 +45,6 @@ final class HorsesViewModel {
         }
     }
 
-    #if targetEnvironment(simulator)
     @MainActor
     private func loadSimulatorMock(isTrainer: Bool) {
         let imgMidnight = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Applebite-Gentlemen.jpg/400px-Applebite-Gentlemen.jpg"
@@ -75,7 +78,6 @@ final class HorsesViewModel {
         ]
         isLoading = false
     }
-    #endif
 
     @MainActor
     func create(_ horse: Horse) async throws {

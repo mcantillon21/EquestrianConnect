@@ -110,6 +110,7 @@ final class AuthManager {
 
     @MainActor
     func previewAs(_ role: String) {
+        isDemoMode = true
         user = User(
             id: "preview-\(role)",
             email: "preview@equestrianconnect.app",
@@ -122,6 +123,7 @@ final class AuthManager {
 
     @MainActor
     func logout() {
+        isDemoMode = false
         client.token = nil
         user = nil
     }

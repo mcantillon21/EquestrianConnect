@@ -28,6 +28,10 @@ final class CalendarViewModel {
         await MainActor.run { loadSimulatorMock() }
         return
         #endif
+        if isDemoMode {
+            await MainActor.run { loadSimulatorMock() }
+            return
+        }
         await MainActor.run { isLoading = true; error = nil }
         do {
             let fetched: [CalendarEvent] = try await client.filter(
@@ -43,7 +47,6 @@ final class CalendarViewModel {
         }
     }
 
-    #if targetEnvironment(simulator)
     @MainActor
     private func loadSimulatorMock() {
         let cal = Calendar.current
@@ -175,7 +178,6 @@ final class CalendarViewModel {
         ]
         isLoading = false
     }
-    #endif
 
     @MainActor
     func createEvent(_ event: CalendarEvent) async throws {

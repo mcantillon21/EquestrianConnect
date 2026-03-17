@@ -16,6 +16,10 @@ final class DashboardViewModel {
         await MainActor.run { loadSimulatorMock(isTrainer: false) }
         return
         #endif
+        if isDemoMode {
+            await MainActor.run { loadSimulatorMock(isTrainer: false) }
+            return
+        }
         await MainActor.run { isLoading = true; error = nil }
         async let horsesTask: [Horse] = try client.filter(
             entity: "Horse",
@@ -58,6 +62,10 @@ final class DashboardViewModel {
         await MainActor.run { loadSimulatorMock(isTrainer: true) }
         return
         #endif
+        if isDemoMode {
+            await MainActor.run { loadSimulatorMock(isTrainer: true) }
+            return
+        }
         await MainActor.run { isLoading = true; error = nil }
         async let horsesTask: [Horse] = try client.filter(
             entity: "Horse",
@@ -89,9 +97,8 @@ final class DashboardViewModel {
         }
     }
 
-    // MARK: - Simulator Mock
+    // MARK: - Demo / Simulator Mock
 
-    #if targetEnvironment(simulator)
     @MainActor
     private func loadSimulatorMock(isTrainer: Bool) {
         let cal = Calendar.current
@@ -209,5 +216,4 @@ final class DashboardViewModel {
 
         isLoading = false
     }
-    #endif
 }
