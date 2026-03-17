@@ -7,8 +7,13 @@ final class AuthManager {
     var isLoading: Bool = true
     var error: String?
 
+    // Set after register or when login is blocked by "verify your email".
+    // Non-nil means the OTP screen should be shown.
+    var pendingVerificationEmail: String?
+
     var isAuthenticated: Bool { user != nil }
     var needsRoleSelection: Bool { isAuthenticated && !(user?.hasRole ?? false) }
+    var needsOTPVerification: Bool { pendingVerificationEmail != nil }
 
     private let client = Base44Client.shared
 
@@ -34,16 +39,9 @@ final class AuthManager {
             await MainActor.run { isLoading = false }
             return
         }
-        
         do {
             let me = try await client.me()
             await MainActor.run { user = me; isLoading = false }
-        } catch Base44Error.unauthorized {
-            client.token = nil
-            await MainActor.run { user = nil; isLoading = false }
-        } catch Base44Error.httpError(let code, _) where code == 403 {
-            client.token = nil
-            await MainActor.run { user = nil; isLoading = false }
         } catch {
             client.token = nil
             await MainActor.run { user = nil; isLoading = false }
@@ -56,16 +54,13 @@ final class AuthManager {
         await MainActor.run { isLoading = true; error = nil }
         do {
             let response = try await client.login(email: email, password: password)
-            if let token = response.access_token {
-                client.token = token
+            await finishAuth(response: response)
+        } catch Base44Error.httpError(_, let msg) where isVerificationRequired(msg) {
+            // Account exists but email not yet verified — go to OTP screen
+            await MainActor.run {
+                pendingVerificationEmail = email
+                isLoading = false
             }
-            let me: User
-            if let u = response.user {
-                me = u
-            } else {
-                me = try await client.me()
-            }
-            await MainActor.run { user = me; isLoading = false }
         } catch {
             await MainActor.run { self.error = error.localizedDescription; isLoading = false }
             throw error
@@ -78,20 +73,38 @@ final class AuthManager {
         await MainActor.run { isLoading = true; error = nil }
         do {
             let response = try await client.register(email: email, password: password, fullName: fullName)
-            if let token = response.access_token {
-                client.token = token
-            }
-            let me: User
-            if let u = response.user {
-                me = u
+            if response.access_token != nil {
+                // Rare case: server skipped OTP (e.g. already verified)
+                await finishAuth(response: response)
             } else {
-                me = try await client.me()
+                // Normal case: OTP sent to email
+                await MainActor.run {
+                    pendingVerificationEmail = email
+                    isLoading = false
+                }
             }
-            await MainActor.run { user = me; isLoading = false }
         } catch {
             await MainActor.run { self.error = error.localizedDescription; isLoading = false }
             throw error
         }
+    }
+
+    // MARK: OTP Verification
+
+    func verifyOTP(email: String, code: String) async throws {
+        await MainActor.run { isLoading = true; error = nil }
+        do {
+            let response = try await client.verifyOTP(email: email, otpCode: code)
+            await MainActor.run { pendingVerificationEmail = nil }
+            await finishAuth(response: response)
+        } catch {
+            await MainActor.run { self.error = error.localizedDescription; isLoading = false }
+            throw error
+        }
+    }
+
+    func resendOTP(email: String) async throws {
+        try await client.resendOTP(email: email)
     }
 
     // MARK: Role Selection
@@ -132,5 +145,23 @@ final class AuthManager {
         isDemoMode = false
         client.token = nil
         user = nil
+        pendingVerificationEmail = nil
+    }
+
+    // MARK: Private helpers
+
+    private func finishAuth(response: LoginResponse) async {
+        if let token = response.access_token { client.token = token }
+        do {
+            let me: User = response.user ?? (try await client.me())
+            await MainActor.run { user = me; isLoading = false }
+        } catch {
+            await MainActor.run { self.error = error.localizedDescription; isLoading = false }
+        }
+    }
+
+    private func isVerificationRequired(_ message: String?) -> Bool {
+        guard let msg = message?.lowercased() else { return false }
+        return msg.contains("verify") || msg.contains("verification") || msg.contains("confirm")
     }
 }

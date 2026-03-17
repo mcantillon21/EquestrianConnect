@@ -164,6 +164,21 @@ final class Base44Client {
         )
     }
 
+    func verifyOTP(email: String, otpCode: String) async throws -> LoginResponse {
+        struct Body: Encodable { let email: String; let otp_code: String }
+        return try await request(
+            method: "POST",
+            path: "/apps/\(appId)/auth/verify-otp",
+            body: Body(email: email, otp_code: otpCode)
+        )
+    }
+
+    func resendOTP(email: String) async throws {
+        struct Body: Encodable { let email: String }
+        try await requestVoid(method: "POST", path: "/apps/\(appId)/auth/resend-otp",
+                              body: Body(email: email))
+    }
+
     func register(email: String, password: String, fullName: String) async throws -> LoginResponse {
         struct RegisterBody: Encodable {
             let email: String

@@ -11,19 +11,16 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.eqWarmWhite.ignoresSafeArea()
+                // Warm off-white base — makes white cards float
+                Color(red: 0.963, green: 0.952, blue: 0.937).ignoresSafeArea()
 
                 if vm.isLoading {
-                    EQLoadingView()
-                        .transition(.opacity)
+                    EQLoadingView().transition(.opacity)
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
                             HeroHeader()
-                            content
-                                .padding(.horizontal, EQSpacing.md)
-                                .padding(.top, EQSpacing.lg)
-                                .padding(.bottom, EQSpacing.xxl)
+                            dashboardContent
                         }
                     }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -76,61 +73,48 @@ struct DashboardView: View {
         }
     }
 
+    // MARK: - Content
+
     @ViewBuilder
-    private var content: some View {
-        VStack(spacing: EQSpacing.lg) {
+    private var dashboardContent: some View {
+        VStack(spacing: EQSpacing.xl) {
 
-            // Stats Strip — one container, two columns
-            statsStrip
+            // Stats
+            statsRow
+                .padding(.horizontal, EQSpacing.md)
+                .padding(.top, EQSpacing.md)
 
-            // Horses
+            // Horses — horizontal card scroll
             if !vm.horses.isEmpty {
-                let isTrainer = auth.user?.isTrainer == true
-                groupedSection(
-                    title: isTrainer ? "Client Horses" : "My Horses",
-                    moreCount: vm.horses.count > 3 ? vm.horses.count : nil,
-                    moreDestination: AnyView(HorsesView())
-                ) {
-                    let horses = Array(vm.horses.prefix(3))
-                    ForEach(horses) { horse in
-                        NavigationLink(value: horse) {
-                            DashboardHorseRow(horse: horse, showOwner: isTrainer)
-                        }
-                        .buttonStyle(.eqPress)
-                        if horse.id != horses.last?.id {
-                            EQDivider().padding(.leading, 56)
-                        }
-                    }
-                }
+                horsesSection
             }
 
-            // Upcoming Events
+            // Events — individual floating cards
             if !vm.upcomingEvents.isEmpty {
-                groupedSection(title: "Upcoming Events") {
-                    let events = Array(vm.upcomingEvents.prefix(3))
-                    ForEach(events) { event in
+                VStack(alignment: .leading, spacing: EQSpacing.sm) {
+                    DashSectionHeader(title: "Upcoming Events")
+                        .padding(.horizontal, EQSpacing.md)
+                    ForEach(Array(vm.upcomingEvents.prefix(3))) { event in
                         Button { selectedEvent = event } label: {
-                            DashboardEventRow(event: event)
+                            DashEventCard(event: event)
                         }
                         .buttonStyle(.eqPress)
-                        if event.id != events.last?.id {
-                            EQDivider().padding(.leading, EQSpacing.md)
-                        }
+                        .padding(.horizontal, EQSpacing.md)
                     }
                 }
             }
 
-            // Messages
+            // Messages — individual floating cards
             if !vm.recentConversations.isEmpty {
-                groupedSection(title: "Recent Messages") {
+                VStack(alignment: .leading, spacing: EQSpacing.sm) {
+                    DashSectionHeader(title: "Messages")
+                        .padding(.horizontal, EQSpacing.md)
                     ForEach(vm.recentConversations) { conv in
                         Button { selectedConv = conv } label: {
-                            DashboardConvRow(conv: conv, currentEmail: auth.user?.email ?? "")
+                            DashConvCard(conv: conv, currentEmail: auth.user?.email ?? "")
                         }
                         .buttonStyle(.eqPress)
-                        if conv.id != vm.recentConversations.last?.id {
-                            EQDivider().padding(.leading, 62)
-                        }
+                        .padding(.horizontal, EQSpacing.md)
                     }
                 }
             }
@@ -144,77 +128,62 @@ struct DashboardView: View {
                 .frame(height: 300)
             }
         }
+        .padding(.bottom, EQSpacing.xxl)
     }
 
-    // MARK: Stats Strip
+    // MARK: - Stats Row
 
-    private var statsStrip: some View {
-        HStack(spacing: 0) {
-            statItem(
+    private var statsRow: some View {
+        HStack(spacing: EQSpacing.sm) {
+            DashStatCard(
+                icon: "figure.equestrian.sports",
                 value: "\(vm.horses.count)",
                 label: auth.user?.isTrainer == true ? "Client Horses" : "My Horses"
             )
-            Rectangle()
-                .fill(Color.eqTaupe.opacity(0.5))
-                .frame(width: 0.5)
-                .padding(.vertical, 12)
-            statItem(
+            DashStatCard(
+                icon: "calendar",
                 value: "\(vm.upcomingEvents.count)",
-                label: "Upcoming"
+                label: "Upcoming Events"
             )
         }
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
-                .strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1)
-        )
     }
 
-    private func statItem(value: String, label: String) -> some View {
-        VStack(spacing: 3) {
-            Text(value)
-                .font(.eqFont(34, weight: .bold))
-                .foregroundStyle(Color.eqInk)
-            Text(label)
-                .font(.eqFont(11, weight: .regular))
-                .foregroundStyle(Color.eqMuted)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, EQSpacing.md)
-    }
+    // MARK: - Horses Section
 
-    // MARK: Grouped Section Helper
-
-    @ViewBuilder
-    private func groupedSection<Content: View>(
-        title: String,
-        moreCount: Int? = nil,
-        moreDestination: AnyView? = nil,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(spacing: EQSpacing.xs) {
-            EQSectionRow(title: title)
-            VStack(spacing: 0) {
-                content()
-                if let count = moreCount, let dest = moreDestination {
-                    EQDivider()
-                    NavigationLink(destination: dest) {
-                        Text("View all \(count)")
-                            .font(.eqFont(13, weight: .medium))
-                            .foregroundStyle(Color.eqLeather)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
+    private var horsesSection: some View {
+        let isTrainer = auth.user?.isTrainer == true
+        return VStack(alignment: .leading, spacing: EQSpacing.sm) {
+            HStack(alignment: .center) {
+                Text(isTrainer ? "Client Horses" : "My Horses")
+                    .font(.eqFont(18, weight: .semibold))
+                    .foregroundStyle(Color.eqInk)
+                Spacer()
+                if vm.horses.count > 4 {
+                    NavigationLink(destination: HorsesView()) {
+                        HStack(spacing: 3) {
+                            Text("See all")
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .font(.eqFont(13, weight: .medium))
+                        .foregroundStyle(Color.eqLeather)
                     }
-                    .buttonStyle(.eqPress)
                 }
             }
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
-                    .strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1)
-            )
+            .padding(.horizontal, EQSpacing.md)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: EQSpacing.sm) {
+                    ForEach(Array(vm.horses.prefix(6))) { horse in
+                        NavigationLink(value: horse) {
+                            DashHorseCard(horse: horse, showOwner: isTrainer)
+                        }
+                        .buttonStyle(.eqPress)
+                    }
+                }
+                .padding(.horizontal, EQSpacing.md)
+                .padding(.vertical, 6) // shadow room
+            }
         }
     }
 }
@@ -226,34 +195,45 @@ private struct HeroHeader: View {
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            // Layered dark gradient — depth without flat black
             Color(red: 0.07, green: 0.055, blue: 0.04)
+            // Warm radial glow bottom-left
             RadialGradient(
-                colors: [Color.eqBark.opacity(0.6), .clear],
-                center: .init(x: 0.08, y: 1.4),
+                colors: [Color.eqBark.opacity(0.75), .clear],
+                center: .init(x: 0.04, y: 1.4),
                 startRadius: 0,
-                endRadius: 240
+                endRadius: 320
             )
+            // Top shadow for depth
             LinearGradient(
-                colors: [Color.black.opacity(0.18), .clear],
+                colors: [Color.black.opacity(0.28), .clear],
                 startPoint: .top,
-                endPoint: .init(x: 0.5, y: 0.5)
+                endPoint: .init(x: 0.5, y: 0.55)
             )
-            VStack(alignment: .leading, spacing: 3) {
-                Text(dateString)
-                    .font(.eqFont(11, weight: .medium))
-                    .foregroundStyle(Color.white.opacity(0.35))
-                    .kerning(0.3)
+            // Right warmth
+            LinearGradient(
+                colors: [.clear, Color.eqLeather.opacity(0.12)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(greeting)
+                    .font(.eqFont(13, weight: .medium))
+                    .foregroundStyle(Color.white.opacity(0.50))
                 Text(auth.user?.full_name?.components(separatedBy: " ").first ?? "Rider")
-                    .font(.eqFont(36, weight: .bold))
+                    .font(.eqFont(42, weight: .bold))
                     .foregroundStyle(.white)
-                    .tracking(-0.5)
+                    .tracking(-1.0)
+                Text(dateString)
+                    .font(.eqFont(12, weight: .regular))
+                    .foregroundStyle(Color.white.opacity(0.38))
+                    .padding(.top, 3)
             }
             .padding(.horizontal, EQSpacing.lg)
-            .padding(.bottom, EQSpacing.md)
+            .padding(.bottom, EQSpacing.lg)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 130)
+        .frame(height: 175)
     }
 
     private var dateString: String {
@@ -261,125 +241,218 @@ private struct HeroHeader: View {
         f.dateFormat = "EEEE, MMMM d"
         return f.string(from: Date())
     }
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 0..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        default: return "Good evening"
+        }
+    }
 }
 
-// MARK: - Dashboard Horse Row
+// MARK: - Stat Card
 
-private struct DashboardHorseRow: View {
+private struct DashStatCard: View {
+    let icon: String
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: EQSpacing.xs) {
+            // Icon chip
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.eqLeather)
+                .frame(width: 34, height: 34)
+                .background(Color.eqLeather.opacity(0.10), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+            Spacer()
+
+            Text(value)
+                .font(.eqFont(40, weight: .bold))
+                .foregroundStyle(Color.eqInk)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.eqFont(12, weight: .regular))
+                .foregroundStyle(Color.eqMuted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(EQSpacing.md)
+        .frame(height: 126)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.07), radius: 16, x: 0, y: 5)
+    }
+}
+
+// MARK: - Horse Card (Airbnb listing card style)
+
+private struct DashHorseCard: View {
     let horse: Horse
     var showOwner: Bool = false
 
+    private let cardW: CGFloat = 160
+    private let cardH: CGFloat = 200
+
     var body: some View {
-        HStack(spacing: 12) {
-            if let img = horse.profile_image, !img.isEmpty {
-                AsyncImage(url: URL(string: img)) { phase in
-                    switch phase {
-                    case .success(let img): img.resizable().scaledToFill()
-                    default: horsePlaceholder
+        ZStack(alignment: .bottom) {
+            // Full-bleed photo
+            Group {
+                if let img = horse.profile_image, !img.isEmpty {
+                    AsyncImage(url: URL(string: img)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        default:
+                            photoPlaceholder
+                        }
                     }
+                } else {
+                    photoPlaceholder
                 }
-                .frame(width: 40, height: 40)
-                .clipShape(Circle())
-            } else {
-                horsePlaceholder
             }
+            .frame(width: cardW, height: cardH)
+            .clipped()
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text(horse.displayName)
-                    .font(.eqFont(15, weight: .semibold))
-                    .foregroundStyle(Color.eqInk)
+            // Gradient scrim + text overlay
+            VStack(alignment: .leading, spacing: 3) {
                 if showOwner, let owner = horse.owner_email {
-                    Text("Owner: \(owner)")
-                        .font(.eqFont(12, weight: .regular))
-                        .foregroundStyle(Color.eqMuted)
-                } else if let breed = horse.breed {
-                    Text("\(breed) · \(horse.genderLabel)")
-                        .font(.eqFont(12, weight: .regular))
-                        .foregroundStyle(Color.eqMuted)
+                    Text(owner.components(separatedBy: "@").first?.capitalized ?? owner)
+                        .font(.eqFont(10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .lineLimit(1)
+                } else if let discipline = horse.discipline {
+                    Text(discipline.uppercased())
+                        .font(.eqFont(9, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.65))
+                        .kerning(0.8)
+                        .lineLimit(1)
+                }
+                Text(horse.displayName)
+                    .font(.eqFont(15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                if let breed = horse.breed {
+                    Text("\(breed) · \(horse.ageString)")
+                        .font(.eqFont(11, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.70))
+                        .lineLimit(1)
                 }
             }
-
-            Spacer()
-
-            if let breed = horse.breed, showOwner {
-                Text(breed)
-                    .font(.eqFont(11, weight: .regular))
-                    .foregroundStyle(Color.eqMuted.opacity(0.7))
-            }
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Color.eqTaupe)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                LinearGradient(
+                    colors: [.clear, Color.black.opacity(0.72)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
         }
-        .padding(.horizontal, EQSpacing.md)
-        .padding(.vertical, 12)
+        .frame(width: cardW, height: cardH)
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.12), radius: 18, x: 0, y: 7)
     }
 
-    private var horsePlaceholder: some View {
+    private var photoPlaceholder: some View {
         ZStack {
-            Circle().fill(Color.eqParchment)
-            Text(horse.displayName.prefix(1).uppercased())
-                .font(.eqFont(16, weight: .semibold))
-                .foregroundStyle(Color.eqLeather)
+            LinearGradient.eqHero
+            VStack(spacing: 6) {
+                Text(horse.displayName.prefix(2).uppercased())
+                    .font(.eqFont(48, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.35))
+                if let discipline = horse.discipline {
+                    Text(discipline.uppercased())
+                        .font(.eqFont(9, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .kerning(1.5)
+                }
+            }
         }
-        .frame(width: 40, height: 40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-// MARK: - Dashboard Event Row
+// MARK: - Event Card
 
-private struct DashboardEventRow: View {
+private struct DashEventCard: View {
     let event: CalendarEvent
 
     var body: some View {
-        HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
+        HStack(spacing: 0) {
+            // Left color bar
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
                 .fill(event.type.eventTypeColor)
-                .frame(width: 3, height: 36)
+                .frame(width: 5)
+                .padding(.vertical, 16)
+                .padding(.leading, EQSpacing.md)
 
-            VStack(alignment: .leading, spacing: 2) {
+            // Content
+            VStack(alignment: .leading, spacing: 5) {
                 Text(event.title)
                     .font(.eqFont(15, weight: .semibold))
                     .foregroundStyle(Color.eqInk)
-                Text(event.start_date.toDisplayDate(format: "MMM d · h:mm a"))
-                    .font(.eqFont(12, weight: .regular))
-                    .foregroundStyle(Color.eqMuted)
+                HStack(spacing: 5) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.eqMuted)
+                    Text(event.start_date.toDisplayDate(format: "MMM d · h:mm a"))
+                        .font(.eqFont(12, weight: .regular))
+                        .foregroundStyle(Color.eqMuted)
+                }
             }
+            .padding(.leading, 14)
+            .padding(.vertical, 18)
 
             Spacer()
 
-            Text(event.type.eventTypeLabel)
-                .font(.eqFont(10, weight: .medium))
-                .foregroundStyle(event.type.eventTypeColor)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(event.type.eventTypeColor.opacity(0.1), in: Capsule())
+            // Right: type badge + icon
+            VStack(alignment: .trailing, spacing: 7) {
+                Text(event.type.eventTypeLabel)
+                    .font(.eqFont(10, weight: .semibold))
+                    .foregroundStyle(event.type.eventTypeColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(event.type.eventTypeColor.opacity(0.10), in: Capsule())
+                Image(systemName: event.type.eventTypeIcon)
+                    .font(.system(size: 15))
+                    .foregroundStyle(event.type.eventTypeColor.opacity(0.45))
+            }
+            .padding(.trailing, EQSpacing.md)
+            .padding(.vertical, 18)
         }
-        .padding(.horizontal, EQSpacing.md)
-        .padding(.vertical, 12)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
     }
 }
 
-// MARK: - Dashboard Conversation Row
+// MARK: - Conversation Card
 
-private struct DashboardConvRow: View {
+private struct DashConvCard: View {
     let conv: Conversation
     let currentEmail: String
 
-    var body: some View {
-        HStack(spacing: 12) {
-            InitialsAvatar(
-                text: conv.otherParticipant(currentEmail: currentEmail),
-                size: 38
-            )
+    private var displayName: String {
+        let other = conv.otherParticipant(currentEmail: currentEmail)
+        return other.components(separatedBy: "@").first?.capitalized ?? other
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(conv.otherParticipant(currentEmail: currentEmail))
+    var body: some View {
+        HStack(spacing: EQSpacing.sm) {
+            InitialsAvatar(text: displayName, size: 46)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(displayName)
                     .font(.eqFont(15, weight: .semibold))
                     .foregroundStyle(Color.eqInk)
                 if let last = conv.last_message {
                     Text(last)
-                        .font(.eqFont(12, weight: .regular))
+                        .font(.eqFont(13, weight: .regular))
                         .foregroundStyle(Color.eqMuted)
                         .lineLimit(1)
                 }
@@ -388,16 +461,35 @@ private struct DashboardConvRow: View {
             Spacer()
 
             if let unread = conv.unread_count, unread > 0 {
-                ZStack {
-                    Circle().fill(Color.eqLeather)
-                    Text("\(unread)")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-                .frame(width: 18, height: 18)
+                Text("\(unread)")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(minWidth: 22, minHeight: 22)
+                    .padding(.horizontal, 3)
+                    .background(Color.eqLeather, in: Capsule())
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.eqTaupe)
             }
         }
         .padding(.horizontal, EQSpacing.md)
-        .padding(.vertical, 12)
+        .padding(.vertical, EQSpacing.sm + 2)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
+    }
+}
+
+// MARK: - Section Header
+
+private struct DashSectionHeader: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.eqFont(18, weight: .semibold))
+            .foregroundStyle(Color.eqInk)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

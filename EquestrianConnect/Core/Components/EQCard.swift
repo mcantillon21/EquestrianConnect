@@ -6,12 +6,9 @@ struct EQCard<Content: View>: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+            RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous)
                 .fill(Color.white)
-                .overlay(
-                    RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
-                        .strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1)
-                )
+                .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
 
             content()
                 .padding(padding)
@@ -66,11 +63,8 @@ struct EQStatCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(EQSpacing.md)
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
-                .strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1)
-        )
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
     }
 }
 

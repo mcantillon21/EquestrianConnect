@@ -200,8 +200,8 @@ private struct EQMoreView: View {
             }.buttonStyle(.eqPress)
         }
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous).strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
         .padding(.horizontal, EQSpacing.md)
     }
 
@@ -215,8 +215,8 @@ private struct EQMoreView: View {
             }.buttonStyle(.eqPress)
         }
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous).strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
         .padding(.horizontal, EQSpacing.md)
     }
     #endif
@@ -236,8 +236,8 @@ private struct EQMoreView: View {
             }.buttonStyle(.eqPress(.medium))
         }
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous).strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
         .padding(.horizontal, EQSpacing.md)
     }
 }

@@ -34,11 +34,8 @@ struct HorsesView: View {
                             }
                         }
                         .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
-                                .strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1)
-                        )
+                        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+                        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
                         .padding(.horizontal, EQSpacing.md)
                         .padding(.vertical, EQSpacing.md)
                     }
@@ -136,7 +133,6 @@ private struct HorseListCard: View {
         ZStack {
             Circle()
                 .fill(Color.eqParchment)
-                .overlay(Circle().strokeBorder(Color.eqTaupe.opacity(0.4), lineWidth: 0.5))
             Text(horse.displayName.prefix(1).uppercased())
                 .font(.eqFont(20, weight: .semibold))
                 .foregroundStyle(Color.eqLeather)
