@@ -11,6 +11,23 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 APP_DIR = os.path.join(BASE, "EquestrianConnect")
 XCODEPROJ = os.path.join(BASE, "EquestrianConnect.xcodeproj")
 
+# Preserve the DEVELOPMENT_TEAM from the existing project so Xcode
+# doesn't ask for re-signing after every regeneration.
+def read_existing_team():
+    pbx = os.path.join(XCODEPROJ, "project.pbxproj")
+    if not os.path.exists(pbx):
+        return '""'
+    with open(pbx, encoding="utf-8") as f:
+        for line in f:
+            m = re.search(r'DEVELOPMENT_TEAM\s*=\s*([^;]+);', line)
+            if m:
+                val = m.group(1).strip()
+                if val and val != '""' and val != "":
+                    return val
+    return '""'
+
+EXISTING_TEAM = read_existing_team()
+
 def fresh_id():
     return uuid.uuid4().hex[:24].upper()
 
@@ -317,7 +334,7 @@ common_settings = {
     "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
     "CODE_SIGN_STYLE": "Automatic",
     "CURRENT_PROJECT_VERSION": "1",
-    "DEVELOPMENT_TEAM": '""',
+    "DEVELOPMENT_TEAM": EXISTING_TEAM,
     "GENERATE_INFOPLIST_FILE": "NO",
     "INFOPLIST_FILE": "EquestrianConnect/Info.plist",
     "IPHONEOS_DEPLOYMENT_TARGET": "17.0",
