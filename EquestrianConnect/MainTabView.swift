@@ -118,6 +118,9 @@ private struct EQMoreView: View {
                         VStack(spacing: EQSpacing.xl) {
                             discoverSection
                             accountSection
+                            #if DEBUG
+                            adminSection
+                            #endif
                             Text("Equestrian Connect · v1.0")
                                 .font(.caption)
                                 .foregroundStyle(Color.eqMuted.opacity(0.6))
@@ -201,6 +204,22 @@ private struct EQMoreView: View {
         .overlay(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous).strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1))
         .padding(.horizontal, EQSpacing.md)
     }
+
+    // MARK: Admin Section (DEBUG only)
+
+    #if DEBUG
+    private var adminSection: some View {
+        VStack(spacing: 0) {
+            NavigationLink { AdminUsersView() } label: {
+                MoreSimpleRow(icon: "person.2.badge.key", title: "All Users (Admin)")
+            }.buttonStyle(.eqPress)
+        }
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous).strokeBorder(Color.eqTaupe.opacity(0.5), lineWidth: 1))
+        .padding(.horizontal, EQSpacing.md)
+    }
+    #endif
 
     // MARK: Account Section
 

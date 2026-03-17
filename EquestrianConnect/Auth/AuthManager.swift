@@ -14,11 +14,16 @@ final class AuthManager {
 
     init() {
         #if targetEnvironment(simulator)
-        user = User(id: "preview-owner", email: "preview@eq.app", full_name: "Jordan Owner", user_type: "owner")
-        isLoading = false
-        #else
-        Task { await checkAuth() }
+        // Add "-USE_REAL_AUTH" to the scheme's launch arguments to skip the
+        // preview user and test real login / real data in the simulator.
+        let useRealAuth = ProcessInfo.processInfo.arguments.contains("-USE_REAL_AUTH")
+        if !useRealAuth {
+            user = User(id: "preview-owner", email: "preview@eq.app", full_name: "Jordan Owner", user_type: "owner")
+            isLoading = false
+            return
+        }
         #endif
+        Task { await checkAuth() }
     }
 
     // MARK: Boot
