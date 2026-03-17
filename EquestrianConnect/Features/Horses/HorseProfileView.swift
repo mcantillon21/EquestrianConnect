@@ -8,7 +8,7 @@ struct HorseProfileView: View {
     @State private var selectedTab = "overview"
     @Environment(\.dismiss) private var dismiss
 
-    private let tabs = ["overview", "health", "training", "earnings"]
+    private let tabs = ["overview", "health", "documents", "training", "earnings"]
 
     var body: some View {
         ZStack {
@@ -50,11 +50,12 @@ struct HorseProfileView: View {
                     // Tab Content
                     Group {
                         switch selectedTab {
-                        case "overview":  OverviewTab(horse: horse)
-                        case "health":    HealthTab(horse: horse)
-                        case "training":  TrainingTab(horse: horse)
-                        case "earnings":  EarningsTab(horse: horse)
-                        default:          EmptyView()
+                        case "overview":   OverviewTab(horse: horse)
+                        case "health":     HealthTab(horse: horse)
+                        case "documents":  DocumentsTab(horse: horse)
+                        case "training":   TrainingTab(horse: horse)
+                        case "earnings":   EarningsTab(horse: horse)
+                        default:           EmptyView()
                         }
                     }
                     .padding(.horizontal, EQSpacing.md)
@@ -206,7 +207,7 @@ private struct OverviewTab: View {
     }
 }
 
-// MARK: - Health Tab (placeholder)
+// MARK: - Health Tab
 
 private struct HealthTab: View {
     let horse: Horse
@@ -218,6 +219,407 @@ private struct HealthTab: View {
             subtitle: "Vet records, farrier visits, and health notes will appear here"
         )
         .frame(height: 300)
+    }
+}
+
+// MARK: - Documents Tab
+
+private struct DocumentsTab: View {
+    let horse: Horse
+    @State private var documents: [HorseDocument] = []
+    @State private var showAddSheet = false
+    @State private var selectedDocument: HorseDocument?
+
+    var body: some View {
+        VStack(spacing: EQSpacing.md) {
+
+            // Add Document button
+            Button { showAddSheet = true } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add Document")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(Color.eqSaddleBrown)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    Color.eqSaddleBrown.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                        .strokeBorder(Color.eqSaddleBrown.opacity(0.25), lineWidth: 1)
+                )
+            }
+
+            if documents.isEmpty {
+                EmptyStateView(
+                    icon: "doc.badge.plus",
+                    title: "No Documents Yet",
+                    subtitle: "Upload vet records, registration papers, health certificates, and more"
+                )
+                .frame(height: 280)
+            } else {
+                let grouped = Dictionary(grouping: documents) { $0.type }
+                let typeOrder = HorseDocument.allTypes.map(\.value)
+
+                ForEach(typeOrder, id: \.self) { type in
+                    if let docs = grouped[type], !docs.isEmpty {
+                        documentSection(type: type, docs: docs)
+                    }
+                }
+            }
+        }
+        .task { loadDocuments() }
+        .sheet(isPresented: $showAddSheet) {
+            AddDocumentSheet(horseId: horse.id) { newDoc in
+                documents.insert(newDoc, at: 0)
+            }
+        }
+        .sheet(item: $selectedDocument) { doc in
+            DocumentDetailSheet(document: doc) { updated in
+                if let idx = documents.firstIndex(where: { $0.id == updated.id }) {
+                    documents[idx] = updated
+                }
+            } onDelete: {
+                documents.removeAll { $0.id == doc.id }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func documentSection(type: String, docs: [HorseDocument]) -> some View {
+        VStack(alignment: .leading, spacing: EQSpacing.xs) {
+            HStack {
+                Text(docs.first?.typeLabel ?? "")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.eqMuted)
+                    .textCase(.uppercase)
+                    .tracking(0.5)
+                Spacer()
+                if docs.count > 1 {
+                    Text("\(docs.count)")
+                        .font(.caption)
+                        .foregroundStyle(Color.eqMuted)
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.top, EQSpacing.xs)
+
+            ForEach(docs) { doc in
+                DocumentCard(document: doc) {
+                    selectedDocument = doc
+                }
+            }
+        }
+    }
+
+    private func loadDocuments() {
+        #if targetEnvironment(simulator)
+        documents = HorseDocument.mockDocuments(for: horse.id)
+        return
+        #endif
+        if isDemoMode {
+            documents = HorseDocument.mockDocuments(for: horse.id)
+            return
+        }
+        Task {
+            if let docs: [HorseDocument] = try? await Base44Client.shared.filter(
+                entity: "HorseDocument",
+                query: ["horse_id": horse.id],
+                sort: "-date",
+                limit: 50
+            ) {
+                await MainActor.run { documents = docs }
+            }
+        }
+    }
+}
+
+// MARK: - Document Card
+
+private struct DocumentCard: View {
+    let document: HorseDocument
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            EQCard(padding: EQSpacing.sm) {
+                HStack(spacing: EQSpacing.sm) {
+                    // Type icon
+                    ZStack {
+                        RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                            .fill(document.typeColor.opacity(0.12))
+                            .frame(width: 42, height: 42)
+                        Image(systemName: document.typeIcon)
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(document.typeColor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(document.title)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color.eqDarkBrown)
+                            .lineLimit(1)
+                        if let date = document.date {
+                            Text(date.toDisplayDate())
+                                .font(.caption)
+                                .foregroundStyle(Color.eqMuted)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.eqLightTan)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Document Detail Sheet
+
+private struct DocumentDetailSheet: View {
+    let document: HorseDocument
+    let onUpdate: (HorseDocument) -> Void
+    let onDelete: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var showDeleteAlert = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.eqWarmWhite.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: EQSpacing.lg) {
+
+                        // Icon + title header
+                        VStack(spacing: EQSpacing.sm) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous)
+                                    .fill(document.typeColor.opacity(0.12))
+                                    .frame(width: 76, height: 76)
+                                Image(systemName: document.typeIcon)
+                                    .font(.system(size: 34, weight: .medium))
+                                    .foregroundStyle(document.typeColor)
+                            }
+
+                            Text(document.title)
+                                .font(.eqSerif(.title3, weight: .bold))
+                                .foregroundStyle(Color.eqDarkBrown)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, EQSpacing.md)
+
+                            EQBadge(text: document.typeLabel)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, EQSpacing.sm)
+
+                        // Details card
+                        EQCard {
+                            VStack(spacing: 0) {
+                                if let date = document.date {
+                                    detailRow(label: "Date", value: date.toDisplayDate())
+                                    EQDivider()
+                                }
+                                detailRow(label: "Type", value: document.typeLabel)
+                                if let uploader = document.uploaded_by {
+                                    EQDivider()
+                                    detailRow(label: "Added by", value: uploader)
+                                }
+                            }
+                            .padding(.vertical, -8)
+                        }
+
+                        // Notes
+                        if let notes = document.notes, !notes.isEmpty {
+                            VStack(alignment: .leading, spacing: EQSpacing.xs) {
+                                Text("Notes")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Color.eqMuted)
+                                    .textCase(.uppercase)
+                                    .tracking(0.5)
+                                    .padding(.horizontal, 4)
+
+                                EQCard {
+                                    Text(notes)
+                                        .font(.subheadline)
+                                        .foregroundStyle(Color.eqDarkBrown)
+                                        .lineSpacing(4)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                        }
+
+                        // File button
+                        VStack(spacing: EQSpacing.xs) {
+                            Button {
+                                if let urlString = document.file_url, let url = URL(string: urlString) {
+                                    UIApplication.shared.open(url)
+                                }
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "doc.viewfinder")
+                                    Text(document.file_url != nil ? "View File" : "No File Attached")
+                                        .font(.subheadline.weight(.semibold))
+                                }
+                                .foregroundStyle(document.file_url != nil ? Color.white : Color.eqMuted)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(
+                                    document.file_url != nil
+                                        ? AnyShapeStyle(Color.eqSaddleBrown)
+                                        : AnyShapeStyle(Color.eqTaupe.opacity(0.3)),
+                                    in: RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                                )
+                            }
+                            .disabled(document.file_url == nil)
+
+                            if document.file_url == nil {
+                                Text("File upload coming in a future update")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.eqMuted)
+                            }
+                        }
+
+                        // Delete
+                        Button(role: .destructive) {
+                            showDeleteAlert = true
+                        } label: {
+                            Text("Delete Document")
+                                .font(.subheadline)
+                                .foregroundStyle(Color.red.opacity(0.8))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .padding(.bottom, EQSpacing.lg)
+                    }
+                    .padding(.horizontal, EQSpacing.md)
+                }
+            }
+            .navigationTitle("Document")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundStyle(Color.eqSaddleBrown)
+                }
+            }
+            .alert("Delete Document?", isPresented: $showDeleteAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    onDelete()
+                    dismiss()
+                }
+            } message: {
+                Text("This action cannot be undone.")
+            }
+        }
+    }
+
+    private func detailRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(Color.eqMuted)
+            Spacer()
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.eqDarkBrown)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, 10)
+    }
+}
+
+// MARK: - Add Document Sheet
+
+private struct AddDocumentSheet: View {
+    let horseId: String
+    let onAdd: (HorseDocument) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedType = "vet_record"
+    @State private var title = ""
+    @State private var date = Date()
+    @State private var includeDate = true
+    @State private var notes = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Document Type") {
+                    Picker("Type", selection: $selectedType) {
+                        ForEach(HorseDocument.allTypes, id: \.value) { type in
+                            Label(type.label, systemImage: iconFor(type.value))
+                                .tag(type.value)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(Color.eqSaddleBrown)
+                }
+
+                Section("Details") {
+                    TextField("Title", text: $title)
+                        .autocorrectionDisabled()
+
+                    Toggle("Include Date", isOn: $includeDate)
+                        .tint(Color.eqSaddleBrown)
+
+                    if includeDate {
+                        DatePicker("Date", selection: $date, displayedComponents: .date)
+                            .tint(Color.eqSaddleBrown)
+                    }
+                }
+
+                Section("Notes (Optional)") {
+                    TextEditor(text: $notes)
+                        .frame(minHeight: 80)
+                }
+            }
+            .navigationTitle("Add Document")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(Color.eqMuted)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") { save() }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.eqSaddleBrown)
+                        .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func save() {
+        let resolvedTitle = title.trimmingCharacters(in: .whitespaces).isEmpty
+            ? (HorseDocument.allTypes.first(where: { $0.value == selectedType })?.label ?? "Document")
+            : title.trimmingCharacters(in: .whitespaces)
+        let doc = HorseDocument(
+            id: UUID().uuidString,
+            horse_id: horseId,
+            title: resolvedTitle,
+            type: selectedType,
+            date: includeDate ? date.iso8601DateString : nil,
+            notes: notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes.trimmingCharacters(in: .whitespaces),
+            file_url: nil,
+            uploaded_by: nil,
+            created_date: Date().iso8601DateString
+        )
+        onAdd(doc)
+        dismiss()
+    }
+
+    private func iconFor(_ type: String) -> String {
+        HorseDocument(id: "", horse_id: "", title: "", type: type).typeIcon
     }
 }
 
