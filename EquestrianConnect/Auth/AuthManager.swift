@@ -29,6 +29,7 @@ final class AuthManager {
             await MainActor.run { isLoading = false }
             return
         }
+        
         do {
             let me = try await client.me()
             await MainActor.run { user = me; isLoading = false }

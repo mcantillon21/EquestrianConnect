@@ -104,7 +104,7 @@ struct EQPressStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.88 : 1.0)
             .animation(.spring(response: 0.25, dampingFraction: 0.65), value: configuration.isPressed)
             .onChange(of: configuration.isPressed) { _, pressed in
-                if pressed { UIImpactFeedbackGenerator(style: feedback).impactOccurred() }
+                if pressed { HapticFeedback.impact(feedback) }
             }
     }
 }

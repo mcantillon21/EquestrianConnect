@@ -205,17 +205,32 @@ extension String {
 }
 
 // MARK: - Haptics
+//
+// Generators are cached and pre-prepared at first use so the Taptic Engine
+// is always warm — avoids the ~10–30 ms allocation cost on every tap.
 
 struct HapticFeedback {
+    private static let lightGen: UIImpactFeedbackGenerator = {
+        let g = UIImpactFeedbackGenerator(style: .light); g.prepare(); return g
+    }()
+    private static let mediumGen: UIImpactFeedbackGenerator = {
+        let g = UIImpactFeedbackGenerator(style: .medium); g.prepare(); return g
+    }()
+    private static let selGen: UISelectionFeedbackGenerator = {
+        let g = UISelectionFeedbackGenerator(); g.prepare(); return g
+    }()
+    private static let notifGen: UINotificationFeedbackGenerator = {
+        let g = UINotificationFeedbackGenerator(); g.prepare(); return g
+    }()
+
     static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .light) {
-        UIImpactFeedbackGenerator(style: style).impactOccurred()
+        switch style {
+        case .medium, .heavy, .rigid: mediumGen.impactOccurred()
+        default: lightGen.impactOccurred()
+        }
     }
-    static func success() {
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-    }
-    static func selection() {
-        UISelectionFeedbackGenerator().selectionChanged()
-    }
+    static func success() { notifGen.notificationOccurred(.success) }
+    static func selection() { selGen.selectionChanged() }
 }
 
 // MARK: - Spring Presets
