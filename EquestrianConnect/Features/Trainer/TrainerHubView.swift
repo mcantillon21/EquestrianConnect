@@ -124,6 +124,16 @@ struct TrainerHubView: View {
     @MainActor
     private func load() async {
         guard let email = auth.user?.email else { return }
+
+        #if targetEnvironment(simulator)
+        loadMock()
+        return
+        #endif
+        if isDemoMode {
+            loadMock()
+            return
+        }
+
         isLoading = true
         error = nil
         async let horsesTask: [Horse] = try Base44Client.shared.filter(
@@ -147,6 +157,86 @@ struct TrainerHubView: View {
         } catch {
             self.error = error.localizedDescription
         }
+        isLoading = false
+    }
+
+    @MainActor
+    private func loadMock() {
+        let cal = Calendar.current
+        let now = Date()
+        func future(_ days: Int) -> String {
+            cal.date(byAdding: .day, value: days, to: now)!.iso8601DateString
+        }
+        func past(_ hours: Int) -> String {
+            cal.date(byAdding: .hour, value: -hours, to: now)!.iso8601DateString
+        }
+
+        horses = [
+            Horse(id: "h1", name: "Midnight Star", barn_name: "Midnight",
+                  breed: "Thoroughbred", color: "Black", date_of_birth: "2018-04-15",
+                  gender: "mare", registration_number: nil, discipline: "Dressage",
+                  owner_email: "jordan@eq.app", trainer_email: "preview@eq.app",
+                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Applebite-Gentlemen.jpg/400px-Applebite-Gentlemen.jpg",
+                  total_earnings: nil, created_date: nil),
+            Horse(id: "h2", name: "Golden Arrow", barn_name: "Arrow",
+                  breed: "Quarter Horse", color: "Palomino", date_of_birth: "2015-07-22",
+                  gender: "gelding", registration_number: nil, discipline: "Western Pleasure",
+                  owner_email: "sarah@eq.app", trainer_email: "preview@eq.app",
+                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Mare_and_foal_%28Kvetina-Marie%29.jpg/400px-Mare_and_foal_%28Kvetina-Marie%29.jpg",
+                  total_earnings: nil, created_date: nil),
+            Horse(id: "h3", name: "Storm Chaser", barn_name: nil,
+                  breed: "Warmblood", color: "Dapple Grey", date_of_birth: "2019-01-10",
+                  gender: "stallion", registration_number: nil, discipline: "Jumping",
+                  owner_email: "mike@eq.app", trainer_email: "preview@eq.app",
+                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/WCLV07m.JPG/400px-WCLV07m.JPG",
+                  total_earnings: nil, created_date: nil),
+            Horse(id: "h4", name: "Ruby Red", barn_name: "Ruby",
+                  breed: "Arabian", color: "Chestnut", date_of_birth: "2017-09-03",
+                  gender: "mare", registration_number: nil, discipline: "Endurance",
+                  owner_email: "lisa@eq.app", trainer_email: "preview@eq.app",
+                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Halterstandingshotarabianone.jpg/400px-Halterstandingshotarabianone.jpg",
+                  total_earnings: nil, created_date: nil),
+        ]
+
+        upcomingEvents = [
+            CalendarEvent(id: "e1", title: "Farrier Visit", type: "farrier",
+                          start_date: future(1), end_date: nil, all_day: false,
+                          location: "Rolling Hills Barn", description: nil,
+                          horse_ids: ["h1", "h2"], user_email: "preview@eq.app",
+                          is_recurring: false, recurrence_frequency: nil,
+                          recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
+            CalendarEvent(id: "e2", title: "Dressage Lesson — Midnight", type: "lesson",
+                          start_date: future(3), end_date: nil, all_day: false,
+                          location: "Arena B", description: nil,
+                          horse_ids: ["h1"], user_email: "preview@eq.app",
+                          is_recurring: true, recurrence_frequency: "weekly",
+                          recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
+            CalendarEvent(id: "e3", title: "Spring Horse Show", type: "horse_show",
+                          start_date: future(12), end_date: nil, all_day: true,
+                          location: "County Equestrian Center", description: nil,
+                          horse_ids: ["h1", "h2", "h3"], user_email: "preview@eq.app",
+                          is_recurring: false, recurrence_frequency: nil,
+                          recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
+        ]
+
+        // Pre-mark Midnight as ridden today for a realistic demo
+        trainingLogs = [
+            TrainingLog(id: "l1", horse_id: "h1", date: now.iso8601DateString,
+                        user_email: "preview@eq.app", created_date: nil),
+        ]
+
+        conversations = [
+            Conversation(id: "c1", participants: ["preview@eq.app", "jordan@eq.app"],
+                         horse_id: "h1", last_message: "How did Midnight do in her lesson?",
+                         last_message_date: past(1), unread_count: 2, created_date: nil),
+            Conversation(id: "c2", participants: ["preview@eq.app", "sarah@eq.app"],
+                         horse_id: "h2", last_message: "Arrow is ready for the show!",
+                         last_message_date: past(5), unread_count: 1, created_date: nil),
+            Conversation(id: "c3", participants: ["preview@eq.app", "mike@eq.app"],
+                         horse_id: "h3", last_message: "Can we reschedule Tuesday's session?",
+                         last_message_date: past(24), unread_count: 0, created_date: nil),
+        ]
+
         isLoading = false
     }
 }
