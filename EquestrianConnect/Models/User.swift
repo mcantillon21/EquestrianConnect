@@ -1,0 +1,17 @@
+import Foundation
+
+struct User: Codable, Identifiable, Hashable {
+    var id: String
+    var email: String
+    var full_name: String?
+    var user_type: String?  // "owner" | "trainer"
+    var profile_image: String?
+
+    var displayName: String { full_name ?? email }
+    var isOwner: Bool  { user_type == "owner" }
+    var isTrainer: Bool { user_type == "trainer" }
+    var hasRole: Bool { user_type != nil && !user_type!.isEmpty }
+
+    static func == (lhs: User, rhs: User) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}

@@ -1,0 +1,24 @@
+name: EquestrianConnect
+options:
+  bundleIdPrefix: com.equestrianconnect
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  SWIFT_VERSION: "5.9"
+
+targets:
+  EquestrianConnect:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - EquestrianConnect
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.equestrianconnect.app
+      MARKETING_VERSION: "1.0.0"
+      CURRENT_PROJECT_VERSION: "1"
+      INFOPLIST_FILE: EquestrianConnect/Info.plist
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      SWIFT_VERSION: "5.9"

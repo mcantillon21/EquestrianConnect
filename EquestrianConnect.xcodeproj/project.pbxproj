@@ -1,0 +1,523 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		003A402F92DC432B80980C64 /* TrainerHorsesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E45B04C624C41249CD70FE4 /* TrainerHorsesView.swift */; };
+		0F194D49E34E4BA28B478519 /* FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22653EF06692444CB14C4770 /* FeedView.swift */; };
+		10EA2F0B442443C8A949AD31 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF97565DC53F45E4AAC678E8 /* Theme.swift */; };
+		16B49E7A2DC54EF5ABA98FEF /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323C2BBFDC2243A694AB5D4A /* DashboardViewModel.swift */; };
+		17E9BA72DAAD42D2A91B2351 /* SimulatorTestHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB116E70744146B3A98D3D9D /* SimulatorTestHarness.swift */; };
+		39655CEAD2B7495596BB5133 /* MessagesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546547CE73944448A5B7AAE7 /* MessagesViewModel.swift */; };
+		3F49A823F6784A1DB9EDA1CD /* ListingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E91CABA8724B458F8A76C54F /* ListingDetailView.swift */; };
+		45E0B3CBAB434C73AC9C0971 /* HorseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45CFA87116DE4B979E47A505 /* HorseFormView.swift */; };
+		4B656CC5BA574E82A2CB1D38 /* Post.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59A0B6FA6612420CB5FD303C /* Post.swift */; };
+		4EB46A83EA264B38A6D18FAB /* MarketplaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6B0128BA884CCF9EBBB7DE /* MarketplaceViewModel.swift */; };
+		50F3800B1F5A4F51BE0FFFDE /* MarketplaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4381C2765F34160A7EF1F2F /* MarketplaceView.swift */; };
+		5B9BEC25F51B4632AA1F9380 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1475138BBEF74C2ABDB8E638 /* CalendarView.swift */; };
+		5D4ED218A3044CD2BFC00F00 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0306437DB4834DF79EC74E67 /* ProfileView.swift */; };
+		72CAC92D88E74388A006F930 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FD4C6FF7322D47169A0DE603 /* Assets.xcassets */; };
+		78C62D46C6E848FEAD86DABB /* Horse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1FB32F73284013BBECBFA1 /* Horse.swift */; };
+		7F0F5C12457E40FCB1C1EEE5 /* MarketplaceListing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24AC3508B18B4811AC0BE041 /* MarketplaceListing.swift */; };
+		80BA1CABD1014A688BCE5CFE /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82DBA75EC0C54516ACC160ED /* FeedViewModel.swift */; };
+		828CCF8E2F904799BD92D8B9 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0EC091ED0FD4E9396F2BBBA /* Extensions.swift */; };
+		84031D7FB91C4D81A45A236F /* Base44Client.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F2A7AD3245949E9AA917393 /* Base44Client.swift */; };
+		9249E113F82C4BDE9695FB49 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C3DF6B4166F4EFCA2C293A0 /* KeychainHelper.swift */; };
+		94B5F92BFF994202BCA50F53 /* TrainerHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC49543C0E9F47F3BB8D2BBE /* TrainerHubView.swift */; };
+		9557480C5D7740F2A7CC1D73 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38E1FE70F484E46968ED544 /* LoginView.swift */; };
+		9A7B6C3511784B268FF90CF3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21EA74C3AC5A44A69DF370D5 /* ContentView.swift */; };
+		9C52B1C4D4624CDD845FD3C1 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C34D845F623C4FDBB34DCFAD /* MainTabView.swift */; };
+		A604F4E54B5C4B04A759AD3E /* EquestrianApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCCC9B9B0ED40AC8B5CCC82 /* EquestrianApp.swift */; };
+		AB3EA295FF264047AD1B0E96 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A591FBDC394FCAB46632CC /* EmptyStateView.swift */; };
+		B088CDAA703C4BD28B21DFDF /* HorsesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD71FA955DA24791A5B3F1FD /* HorsesViewModel.swift */; };
+		C4118618F2954F689991D124 /* HorseProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9043C1FDE0A4738A43D315C /* HorseProfileView.swift */; };
+		C936BCA08F064D99AC11AEF8 /* HorsesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C33673CFA55C4D378835F3AC /* HorsesView.swift */; };
+		CA54ABFE565B4ED3A9889558 /* Messaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C2EA358C204164B5E3684C /* Messaging.swift */; };
+		CA724CC8576E48DB99AEE5B5 /* RoleSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BA82FF000C240839525AA53 /* RoleSelectView.swift */; };
+		CC326689FD324715901E2873 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0243ADE1C3D4BBCA0F117C6 /* ChatView.swift */; };
+		D47E9387761240D89DA4C384 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD819B5066AE4B6185F94846 /* AuthManager.swift */; };
+		D57E53FD6E6F45EABDBC7332 /* CalendarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851302D3A19B4EEF80665C4E /* CalendarViewModel.swift */; };
+		DBEF567D6BB542F6A4DF20A2 /* EQTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8203AA09F404AD5ACCF74A6 /* EQTextField.swift */; };
+		DC90513504F44544B1B1EEFE /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = A744E7EBAED44632AD4FEEA2 /* User.swift */; };
+		DD172F8AC4C94CFA8F152E83 /* EQButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72472A820C5349EBA400E649 /* EQButton.swift */; };
+		E326EAD8F2F448848265FE32 /* EQCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03B99FD652184593A762DD5B /* EQCard.swift */; };
+		E38F60353DED45B2912F7F89 /* ConversationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A379B9A0055409D90EAB22E /* ConversationsView.swift */; };
+		E5C3ADE30FF84E8283B9E164 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A95B33DCB7944021BD15B711 /* DashboardView.swift */; };
+		EBC7F1A9E1274D19BB8B9BE7 /* EventFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5DFE664F04E4879ABA51DED /* EventFormView.swift */; };
+		F1F4A4892623420587FFFC97 /* CalendarEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15E0795E77B49E48F7E0830 /* CalendarEvent.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0306437DB4834DF79EC74E67 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		03B99FD652184593A762DD5B /* EQCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQCard.swift; sourceTree = "<group>"; };
+		0F2A7AD3245949E9AA917393 /* Base44Client.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base44Client.swift; sourceTree = "<group>"; };
+		1475138BBEF74C2ABDB8E638 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		21EA74C3AC5A44A69DF370D5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		22653EF06692444CB14C4770 /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedView.swift; sourceTree = "<group>"; };
+		24AC3508B18B4811AC0BE041 /* MarketplaceListing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceListing.swift; sourceTree = "<group>"; };
+		2E45B04C624C41249CD70FE4 /* TrainerHorsesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainerHorsesView.swift; sourceTree = "<group>"; };
+		323C2BBFDC2243A694AB5D4A /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
+		45CFA87116DE4B979E47A505 /* HorseFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorseFormView.swift; sourceTree = "<group>"; };
+		546547CE73944448A5B7AAE7 /* MessagesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagesViewModel.swift; sourceTree = "<group>"; };
+		59A0B6FA6612420CB5FD303C /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
+		6BA82FF000C240839525AA53 /* RoleSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoleSelectView.swift; sourceTree = "<group>"; };
+		6C3DF6B4166F4EFCA2C293A0 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		72472A820C5349EBA400E649 /* EQButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQButton.swift; sourceTree = "<group>"; };
+		7A379B9A0055409D90EAB22E /* ConversationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsView.swift; sourceTree = "<group>"; };
+		824774762FF34CC7B850F816 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		82DBA75EC0C54516ACC160ED /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
+		851302D3A19B4EEF80665C4E /* CalendarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarViewModel.swift; sourceTree = "<group>"; };
+		8F1FB32F73284013BBECBFA1 /* Horse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Horse.swift; sourceTree = "<group>"; };
+		A744E7EBAED44632AD4FEEA2 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		A95B33DCB7944021BD15B711 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		AFCCC9B9B0ED40AC8B5CCC82 /* EquestrianApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquestrianApp.swift; sourceTree = "<group>"; };
+		B3C2EA358C204164B5E3684C /* Messaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Messaging.swift; sourceTree = "<group>"; };
+		BF97565DC53F45E4AAC678E8 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		C0EC091ED0FD4E9396F2BBBA /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		C15E0795E77B49E48F7E0830 /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
+		C33673CFA55C4D378835F3AC /* HorsesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorsesView.swift; sourceTree = "<group>"; };
+		C34D845F623C4FDBB34DCFAD /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		C5DFE664F04E4879ABA51DED /* EventFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventFormView.swift; sourceTree = "<group>"; };
+		CC49543C0E9F47F3BB8D2BBE /* TrainerHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainerHubView.swift; sourceTree = "<group>"; };
+		CF6B0128BA884CCF9EBBB7DE /* MarketplaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceViewModel.swift; sourceTree = "<group>"; };
+		D0243ADE1C3D4BBCA0F117C6 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		D1A591FBDC394FCAB46632CC /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		D38E1FE70F484E46968ED544 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		D8203AA09F404AD5ACCF74A6 /* EQTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQTextField.swift; sourceTree = "<group>"; };
+		E91CABA8724B458F8A76C54F /* ListingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListingDetailView.swift; sourceTree = "<group>"; };
+		F4381C2765F34160A7EF1F2F /* MarketplaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceView.swift; sourceTree = "<group>"; };
+		F9043C1FDE0A4738A43D315C /* HorseProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorseProfileView.swift; sourceTree = "<group>"; };
+		FB116E70744146B3A98D3D9D /* SimulatorTestHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorTestHarness.swift; sourceTree = "<group>"; };
+		FC154745AFC24BC481472291 /* EquestrianConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EquestrianConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FD4C6FF7322D47169A0DE603 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FD71FA955DA24791A5B3F1FD /* HorsesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorsesViewModel.swift; sourceTree = "<group>"; };
+		FD819B5066AE4B6185F94846 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F6A837A1659B4742AD231AD3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		100D2975720349DFA471D25A /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				844A0C043F1F4C32B0A2DF43 /* Calendar */,
+				FCCC215BB41B4D4C9E33815D /* Dashboard */,
+				F9A163C37E3B4E368ED1C3C6 /* Feed */,
+				5B4F50B3DC0F4D9DB8F73115 /* Horses */,
+				955E3727599B4146BBE7F5CE /* Marketplace */,
+				E84A2F035A8A4F0396E4DF47 /* Messages */,
+				4D64D6131EF941ABBB17386D /* Profile */,
+				38096EA8013A407196D28AF4 /* Trainer */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		1D5FB0BA92FA477BBFBC3A3C /* EquestrianConnect */ = {
+			isa = PBXGroup;
+			children = (
+				E84B3F2A79F64705B05FCC3D /* Auth */,
+				A932235484AE4650B31EB612 /* Core */,
+				100D2975720349DFA471D25A /* Features */,
+				32A553E22C294240A8F1E1D2 /* Models */,
+				E3EE319BF2FB4757BEC0AE4E /* Networking */,
+				21EA74C3AC5A44A69DF370D5 /* ContentView.swift */,
+				AFCCC9B9B0ED40AC8B5CCC82 /* EquestrianApp.swift */,
+				824774762FF34CC7B850F816 /* Info.plist */,
+				C34D845F623C4FDBB34DCFAD /* MainTabView.swift */,
+				FB116E70744146B3A98D3D9D /* SimulatorTestHarness.swift */,
+				FD4C6FF7322D47169A0DE603 /* Assets.xcassets */,
+				3A0A0D0AE0CE4ED2ACDEC921 /* Products */,
+			);
+			path = EquestrianConnect;
+			sourceTree = "<group>";
+		};
+		32A553E22C294240A8F1E1D2 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C15E0795E77B49E48F7E0830 /* CalendarEvent.swift */,
+				8F1FB32F73284013BBECBFA1 /* Horse.swift */,
+				24AC3508B18B4811AC0BE041 /* MarketplaceListing.swift */,
+				B3C2EA358C204164B5E3684C /* Messaging.swift */,
+				59A0B6FA6612420CB5FD303C /* Post.swift */,
+				A744E7EBAED44632AD4FEEA2 /* User.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		38096EA8013A407196D28AF4 /* Trainer */ = {
+			isa = PBXGroup;
+			children = (
+				2E45B04C624C41249CD70FE4 /* TrainerHorsesView.swift */,
+				CC49543C0E9F47F3BB8D2BBE /* TrainerHubView.swift */,
+			);
+			path = Trainer;
+			sourceTree = "<group>";
+		};
+		3A0A0D0AE0CE4ED2ACDEC921 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FC154745AFC24BC481472291 /* EquestrianConnect.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4D64D6131EF941ABBB17386D /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				0306437DB4834DF79EC74E67 /* ProfileView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		5B4F50B3DC0F4D9DB8F73115 /* Horses */ = {
+			isa = PBXGroup;
+			children = (
+				45CFA87116DE4B979E47A505 /* HorseFormView.swift */,
+				F9043C1FDE0A4738A43D315C /* HorseProfileView.swift */,
+				C33673CFA55C4D378835F3AC /* HorsesView.swift */,
+				FD71FA955DA24791A5B3F1FD /* HorsesViewModel.swift */,
+			);
+			path = Horses;
+			sourceTree = "<group>";
+		};
+		844A0C043F1F4C32B0A2DF43 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				1475138BBEF74C2ABDB8E638 /* CalendarView.swift */,
+				851302D3A19B4EEF80665C4E /* CalendarViewModel.swift */,
+				C5DFE664F04E4879ABA51DED /* EventFormView.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		955E3727599B4146BBE7F5CE /* Marketplace */ = {
+			isa = PBXGroup;
+			children = (
+				E91CABA8724B458F8A76C54F /* ListingDetailView.swift */,
+				F4381C2765F34160A7EF1F2F /* MarketplaceView.swift */,
+				CF6B0128BA884CCF9EBBB7DE /* MarketplaceViewModel.swift */,
+			);
+			path = Marketplace;
+			sourceTree = "<group>";
+		};
+		A932235484AE4650B31EB612 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				CBFD6556B11D445583A0ED92 /* Components */,
+				C0EC091ED0FD4E9396F2BBBA /* Extensions.swift */,
+				6C3DF6B4166F4EFCA2C293A0 /* KeychainHelper.swift */,
+				BF97565DC53F45E4AAC678E8 /* Theme.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		CBFD6556B11D445583A0ED92 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				72472A820C5349EBA400E649 /* EQButton.swift */,
+				03B99FD652184593A762DD5B /* EQCard.swift */,
+				D8203AA09F404AD5ACCF74A6 /* EQTextField.swift */,
+				D1A591FBDC394FCAB46632CC /* EmptyStateView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		E3EE319BF2FB4757BEC0AE4E /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				0F2A7AD3245949E9AA917393 /* Base44Client.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		E84A2F035A8A4F0396E4DF47 /* Messages */ = {
+			isa = PBXGroup;
+			children = (
+				D0243ADE1C3D4BBCA0F117C6 /* ChatView.swift */,
+				7A379B9A0055409D90EAB22E /* ConversationsView.swift */,
+				546547CE73944448A5B7AAE7 /* MessagesViewModel.swift */,
+			);
+			path = Messages;
+			sourceTree = "<group>";
+		};
+		E84B3F2A79F64705B05FCC3D /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				FD819B5066AE4B6185F94846 /* AuthManager.swift */,
+				D38E1FE70F484E46968ED544 /* LoginView.swift */,
+				6BA82FF000C240839525AA53 /* RoleSelectView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		F9A163C37E3B4E368ED1C3C6 /* Feed */ = {
+			isa = PBXGroup;
+			children = (
+				22653EF06692444CB14C4770 /* FeedView.swift */,
+				82DBA75EC0C54516ACC160ED /* FeedViewModel.swift */,
+			);
+			path = Feed;
+			sourceTree = "<group>";
+		};
+		FCCC215BB41B4D4C9E33815D /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				A95B33DCB7944021BD15B711 /* DashboardView.swift */,
+				323C2BBFDC2243A694AB5D4A /* DashboardViewModel.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2B07584990BD4E0195F34CCF /* EquestrianConnect */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 24EA53827D9B4DFEA6488B98 /* Build configuration list for PBXNativeTarget "EquestrianConnect" */;
+			buildPhases = (
+				1F83463997A44B1CA8949DA0 /* Sources */,
+				F6A837A1659B4742AD231AD3 /* Frameworks */,
+				8490388B46924DC08F4C7DD6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = EquestrianConnect;
+			productName = EquestrianConnect;
+			productReference = FC154745AFC24BC481472291 /* EquestrianConnect.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E5ECA7B74A604E6B8FDA2D5E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					2B07584990BD4E0195F34CCF = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = F7B04A5729A546C2B6947CFA /* Build configuration list for PBXProject "EquestrianConnect" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1D5FB0BA92FA477BBFBC3A3C /* EquestrianConnect */;
+			productRefGroup = 3A0A0D0AE0CE4ED2ACDEC921 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2B07584990BD4E0195F34CCF /* EquestrianConnect */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8490388B46924DC08F4C7DD6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				72CAC92D88E74388A006F930 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1F83463997A44B1CA8949DA0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D47E9387761240D89DA4C384 /* AuthManager.swift in Sources */,
+				9557480C5D7740F2A7CC1D73 /* LoginView.swift in Sources */,
+				CA724CC8576E48DB99AEE5B5 /* RoleSelectView.swift in Sources */,
+				9A7B6C3511784B268FF90CF3 /* ContentView.swift in Sources */,
+				DD172F8AC4C94CFA8F152E83 /* EQButton.swift in Sources */,
+				E326EAD8F2F448848265FE32 /* EQCard.swift in Sources */,
+				DBEF567D6BB542F6A4DF20A2 /* EQTextField.swift in Sources */,
+				AB3EA295FF264047AD1B0E96 /* EmptyStateView.swift in Sources */,
+				828CCF8E2F904799BD92D8B9 /* Extensions.swift in Sources */,
+				9249E113F82C4BDE9695FB49 /* KeychainHelper.swift in Sources */,
+				10EA2F0B442443C8A949AD31 /* Theme.swift in Sources */,
+				A604F4E54B5C4B04A759AD3E /* EquestrianApp.swift in Sources */,
+				5B9BEC25F51B4632AA1F9380 /* CalendarView.swift in Sources */,
+				D57E53FD6E6F45EABDBC7332 /* CalendarViewModel.swift in Sources */,
+				EBC7F1A9E1274D19BB8B9BE7 /* EventFormView.swift in Sources */,
+				E5C3ADE30FF84E8283B9E164 /* DashboardView.swift in Sources */,
+				16B49E7A2DC54EF5ABA98FEF /* DashboardViewModel.swift in Sources */,
+				0F194D49E34E4BA28B478519 /* FeedView.swift in Sources */,
+				80BA1CABD1014A688BCE5CFE /* FeedViewModel.swift in Sources */,
+				45E0B3CBAB434C73AC9C0971 /* HorseFormView.swift in Sources */,
+				C4118618F2954F689991D124 /* HorseProfileView.swift in Sources */,
+				C936BCA08F064D99AC11AEF8 /* HorsesView.swift in Sources */,
+				B088CDAA703C4BD28B21DFDF /* HorsesViewModel.swift in Sources */,
+				3F49A823F6784A1DB9EDA1CD /* ListingDetailView.swift in Sources */,
+				50F3800B1F5A4F51BE0FFFDE /* MarketplaceView.swift in Sources */,
+				4EB46A83EA264B38A6D18FAB /* MarketplaceViewModel.swift in Sources */,
+				CC326689FD324715901E2873 /* ChatView.swift in Sources */,
+				E38F60353DED45B2912F7F89 /* ConversationsView.swift in Sources */,
+				39655CEAD2B7495596BB5133 /* MessagesViewModel.swift in Sources */,
+				5D4ED218A3044CD2BFC00F00 /* ProfileView.swift in Sources */,
+				003A402F92DC432B80980C64 /* TrainerHorsesView.swift in Sources */,
+				94B5F92BFF994202BCA50F53 /* TrainerHubView.swift in Sources */,
+				9C52B1C4D4624CDD845FD3C1 /* MainTabView.swift in Sources */,
+				F1F4A4892623420587FFFC97 /* CalendarEvent.swift in Sources */,
+				78C62D46C6E848FEAD86DABB /* Horse.swift in Sources */,
+				7F0F5C12457E40FCB1C1EEE5 /* MarketplaceListing.swift in Sources */,
+				CA54ABFE565B4ED3A9889558 /* Messaging.swift in Sources */,
+				4B656CC5BA574E82A2CB1D38 /* Post.swift in Sources */,
+				DC90513504F44544B1B1EEFE /* User.swift in Sources */,
+				84031D7FB91C4D81A45A236F /* Base44Client.swift in Sources */,
+				17E9BA72DAAD42D2A91B2351 /* SimulatorTestHarness.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0B8E84D0D8D54F29AA97E87E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		459A7A9B41D04207893FB889 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = TFL23K3TK9;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = EquestrianConnect/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.equestrianconnect.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BE70866E263F42A1A20393E8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = TFL23K3TK9;
+				ENABLE_NS_ASSERTIONS = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = EquestrianConnect/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.equestrianconnect.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BE84F5233F28409386233592 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		24EA53827D9B4DFEA6488B98 /* Build configuration list for PBXNativeTarget "EquestrianConnect" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				459A7A9B41D04207893FB889 /* Debug */,
+				BE70866E263F42A1A20393E8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F7B04A5729A546C2B6947CFA /* Build configuration list for PBXProject "EquestrianConnect" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BE84F5233F28409386233592 /* Debug */,
+				0B8E84D0D8D54F29AA97E87E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E5ECA7B74A604E6B8FDA2D5E /* Project object */;
+}
