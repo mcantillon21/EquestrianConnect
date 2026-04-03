@@ -10,8 +10,8 @@ struct Horse: Codable, Identifiable, Hashable {
     var gender: String?            // stallion | mare | gelding
     var registration_number: String?
     var discipline: String?
-    var owner_email: String?
-    var trainer_email: String?
+    var owner_id: String?
+    var trainer_id: String?
     var profile_image: String?
     var total_earnings: Double?
     var created_date: String?

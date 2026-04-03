@@ -28,9 +28,9 @@ struct FeedView: View {
                                 PostCard(
                                     post: post,
                                     isLiked: vm.myLikes.contains(post.id),
-                                    isOwned: post.author_email == auth.user?.email
+                                    isOwned: post.author_id == auth.user?.id
                                 ) {
-                                    Task { await vm.toggleLike(post: post, userEmail: auth.user?.email ?? "") }
+                                    Task { await vm.toggleLike(post: post, userId: auth.user?.id ?? "") }
                                 } onDelete: {
                                     Task { try? await vm.deletePost(post) }
                                 }
@@ -59,11 +59,11 @@ struct FeedView: View {
             }
             .task {
                 guard let user = auth.user else { return }
-                await vm.load(userEmail: user.email)
+                await vm.load(userId: user.id)
             }
             .refreshable {
                 guard let user = auth.user else { return }
-                await vm.load(userEmail: user.email)
+                await vm.load(userId: user.id)
             }
         }
     }
@@ -85,9 +85,9 @@ struct PostCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Header
                 HStack(spacing: EQSpacing.sm) {
-                    InitialsAvatar(text: post.author_name ?? post.author_email ?? "?", size: 38)
+                    InitialsAvatar(text: post.author_name ?? post.author_id ?? "?", size: 38)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(post.author_name ?? post.author_email ?? "User")
+                        Text(post.author_name ?? post.author_id ?? "User")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color.eqDarkBrown)
                         if let date = post.created_date {
@@ -297,7 +297,7 @@ struct CreatePostView: View {
         guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
         selectedImageData = data
         isUploading = true
-        uploadedURL = try? await Base44Client.shared.uploadFile(imageData: data)
+        uploadedURL = try? await SupabaseClient.shared.uploadFile(imageData: data)
         isUploading = false
     }
 
@@ -306,7 +306,7 @@ struct CreatePostView: View {
         error = nil
         let p = Post(
             id: UUID().uuidString,
-            author_email: auth.user?.email,
+            author_id: auth.user?.id,
             author_name: auth.user?.full_name,
             caption: caption.isEmpty ? nil : caption,
             media_type: uploadedURL != nil ? "photo" : nil,

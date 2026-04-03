@@ -1,13 +1,13 @@
 import SwiftUI
 
 // Accessible from the More tab (debug builds only).
-// Shows every user who has signed up via Base44.
+// Shows every user who has signed up.
 struct AdminUsersView: View {
     @State private var users: [User] = []
     @State private var isLoading = false
     @State private var error: String?
 
-    private let client = Base44Client.shared
+    private let client = SupabaseClient.shared
 
     var body: some View {
         NavigationStack {
@@ -77,7 +77,7 @@ struct AdminUsersView: View {
         isLoading = true
         error = nil
         do {
-            users = try await client.list(entity: "User", sort: "-created_date", limit: 200)
+            users = try await client.list(table: "profiles", order: "created_date.desc", limit: 200)
         } catch {
             self.error = error.localizedDescription
         }

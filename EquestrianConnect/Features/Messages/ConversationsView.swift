@@ -26,7 +26,7 @@ struct ConversationsView: View {
                         ForEach(vm.conversations) { conv in
                             ConversationRow(
                                 conv: conv,
-                                currentEmail: auth.user?.email ?? ""
+                                currentUserId: auth.user?.id ?? ""
                             )
                             .contentShape(Rectangle())
                             .onTapGesture { selectedConv = conv }
@@ -69,18 +69,18 @@ struct ConversationsView: View {
 
 private struct ConversationRow: View {
     let conv: Conversation
-    let currentEmail: String
+    let currentUserId: String
 
     var body: some View {
         HStack(spacing: EQSpacing.md) {
             InitialsAvatar(
-                text: conv.otherParticipant(currentEmail: currentEmail),
+                text: conv.otherParticipant(currentUserId: currentUserId),
                 size: 50
             )
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(conv.otherParticipant(currentEmail: currentEmail))
+                    Text(conv.otherParticipant(currentUserId: currentUserId))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.eqDarkBrown)
                     Spacer()
@@ -171,7 +171,7 @@ private struct NewConversationView: View {
         isCreating = true
         Task {
             do {
-                let conv = try await vm.startConversation(with: email, currentEmail: me.email)
+                let conv = try await vm.startConversation(with: email, currentUserId: me.id)
                 dismiss()
                 onCreated(conv)
             } catch {

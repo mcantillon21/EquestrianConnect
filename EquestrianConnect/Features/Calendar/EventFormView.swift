@@ -164,7 +164,7 @@ struct EventFormView: View {
             all_day: allDay,
             location: location.isEmpty ? nil : location,
             description: notes.isEmpty ? nil : notes,
-            user_email: auth.user?.email,
+            user_id: auth.user?.id,
             is_recurring: isRecurring,
             recurrence_frequency: isRecurring ? recurrenceFreq : nil,
             recurrence_count: isRecurring ? recurrenceCount : nil

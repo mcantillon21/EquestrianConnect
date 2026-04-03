@@ -20,7 +20,7 @@ struct SimulatorTestHarness: View {
         gender: "mare",
         registration_number: "USEF-123456",
         discipline: "Dressage",
-        owner_email: "preview@eq.app",
+        owner_id: "preview-owner",
         total_earnings: 45250
     )
 
@@ -34,12 +34,12 @@ struct SimulatorTestHarness: View {
         location: "Rolling Hills Barn",
         description: "Routine shoeing for Midnight Star and Golden Arrow.",
         horse_ids: ["test-h1"],
-        user_email: "preview@eq.app"
+        user_id: "preview-owner"
     )
 
     static let conversation = Conversation(
         id: "test-c1",
-        participants: ["preview@eq.app", "sarah@trainerexample.com"],
+        participants: ["preview-owner", "sarah-id"],
         last_message: "See you Thursday at 9am! Midnight is looking great.",
         last_message_date: "2026-03-15",
         unread_count: 2
@@ -86,9 +86,9 @@ struct SimulatorTestHarness: View {
     private func preloadedMessagesVM() -> MessagesViewModel {
         let vm = MessagesViewModel()
         let msgs = [
-            Message(id: "m1", conversation_id: "test-c1", sender_email: "sarah@trainerexample.com", content: "How is Midnight doing?", created_date: "2026-03-15T08:00:00-07:00"),
-            Message(id: "m2", conversation_id: "test-c1", sender_email: "preview@eq.app", content: "She's doing great! Ready for Thursday.", created_date: "2026-03-15T08:05:00-07:00"),
-            Message(id: "m3", conversation_id: "test-c1", sender_email: "sarah@trainerexample.com", content: "See you Thursday at 9am! Midnight is looking great.", created_date: "2026-03-15T08:10:00-07:00")
+            Message(id: "m1", conversation_id: "test-c1", sender_id: "sarah-id", content: "How is Midnight doing?", created_date: "2026-03-15T08:00:00-07:00"),
+            Message(id: "m2", conversation_id: "test-c1", sender_id: "preview-owner", content: "She's doing great! Ready for Thursday.", created_date: "2026-03-15T08:05:00-07:00"),
+            Message(id: "m3", conversation_id: "test-c1", sender_id: "sarah-id", content: "See you Thursday at 9am! Midnight is looking great.", created_date: "2026-03-15T08:10:00-07:00")
         ]
         vm.messages["test-c1"] = msgs
         return vm

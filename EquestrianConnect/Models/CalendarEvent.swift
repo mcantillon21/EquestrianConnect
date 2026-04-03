@@ -10,7 +10,7 @@ struct CalendarEvent: Codable, Identifiable, Hashable {
     var location: String?
     var description: String?
     var horse_ids: [String]?
-    var user_email: String?
+    var user_id: String?
     var is_recurring: Bool?
     var recurrence_frequency: String?  // daily | weekly | monthly | yearly
     var recurrence_count: Int?
@@ -45,7 +45,7 @@ struct TrainingLog: Codable, Identifiable, Hashable {
     var id: String
     var horse_id: String
     var date: String           // yyyy-MM-dd
-    var user_email: String?
+    var user_id: String?
     var created_date: String?
 
     static func == (lhs: TrainingLog, rhs: TrainingLog) -> Bool { lhs.id == rhs.id }

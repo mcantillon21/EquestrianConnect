@@ -26,14 +26,14 @@ final class MarketplaceViewModel {
         return result
     }
 
-    private let client = Base44Client.shared
+    private let client = SupabaseClient.shared
 
     func load() async {
         await MainActor.run { isLoading = true; error = nil }
         do {
             let fetched: [MarketplaceListing] = try await client.list(
-                entity: "MarketplaceListing",
-                sort: "-created_date",
+                table: "marketplace_listings",
+                order: "created_date.desc",
                 limit: 100
             )
             await MainActor.run { listings = fetched; isLoading = false }
@@ -45,13 +45,13 @@ final class MarketplaceViewModel {
 
     @MainActor
     func create(_ listing: MarketplaceListing) async throws {
-        let created: MarketplaceListing = try await client.create(entity: "MarketplaceListing", data: listing)
+        let created: MarketplaceListing = try await client.create(table: "marketplace_listings", data: listing)
         listings.insert(created, at: 0)
     }
 
     @MainActor
     func delete(_ listing: MarketplaceListing) async throws {
-        try await client.delete(entity: "MarketplaceListing", id: listing.id)
+        try await client.delete(table: "marketplace_listings", id: listing.id)
         listings.removeAll { $0.id == listing.id }
     }
 }

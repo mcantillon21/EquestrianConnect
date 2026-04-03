@@ -8,7 +8,7 @@ struct ListingDetailView: View {
     @State private var showDeleteAlert = false
     @State private var currentImageIndex = 0
 
-    private var isMyListing: Bool { listing.seller_email == auth.user?.email }
+    private var isMyListing: Bool { listing.seller_id == auth.user?.id }
 
     var body: some View {
         NavigationStack {
@@ -156,7 +156,7 @@ struct ListingDetailView: View {
 
     private var sellerSection: some View {
         HStack(spacing: EQSpacing.md) {
-            InitialsAvatar(text: listing.seller_name ?? listing.seller_email ?? "?", size: 44)
+            InitialsAvatar(text: listing.seller_name ?? "?", size: 44)
             VStack(alignment: .leading, spacing: 2) {
                 Text(listing.seller_name ?? "Seller")
                     .font(.subheadline.weight(.semibold))
@@ -289,7 +289,7 @@ struct ListingFormView: View {
             price_negotiable: negotiable,
             description: description.isEmpty ? nil : description,
             location: location.isEmpty ? nil : location,
-            seller_email: auth.user?.email,
+            seller_id: auth.user?.id,
             seller_name: auth.user?.full_name,
             seller_phone: phone.isEmpty ? nil : phone,
             status: "active",

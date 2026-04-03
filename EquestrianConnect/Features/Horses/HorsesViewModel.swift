@@ -18,9 +18,9 @@ final class HorsesViewModel {
         }
     }
 
-    private let client = Base44Client.shared
+    private let client = SupabaseClient.shared
 
-    func load(userEmail: String, isTrainer: Bool = false) async {
+    func load(userId: String, isTrainer: Bool = false) async {
         #if targetEnvironment(simulator)
         await MainActor.run { loadSimulatorMock(isTrainer: isTrainer) }
         return
@@ -31,11 +31,11 @@ final class HorsesViewModel {
         }
         await MainActor.run { isLoading = true; error = nil }
         do {
-            let field = isTrainer ? "trainer_email" : "owner_email"
+            let field = isTrainer ? "trainer_id" : "owner_id"
             let fetched: [Horse] = try await client.filter(
-                entity: "Horse",
-                query: [field: userEmail],
-                sort: "name",
+                table: "horses",
+                query: [URLQueryItem(name: field, value: "eq.\(userId)")],
+                order: "name.asc",
                 limit: 100
             )
             await MainActor.run { horses = fetched; isLoading = false }
@@ -55,25 +55,25 @@ final class HorsesViewModel {
             Horse(id: "h1", name: "Midnight Star", barn_name: "Midnight",
                   breed: "Thoroughbred", color: "Black", date_of_birth: "2018-04-15",
                   gender: "mare", registration_number: "TB-2018-4421", discipline: "Dressage",
-                  owner_email: "preview@eq.app", trainer_email: isTrainer ? "preview@eq.app" : nil,
+                  owner_id: "preview-owner", trainer_id: isTrainer ? "preview-trainer" : nil,
                   profile_image: imgMidnight, total_earnings: 12400, created_date: nil),
             Horse(id: "h2", name: "Golden Arrow", barn_name: "Arrow",
                   breed: "Quarter Horse", color: "Palomino", date_of_birth: "2015-07-22",
                   gender: "gelding", registration_number: "QH-2015-8810", discipline: "Western Pleasure",
-                  owner_email: isTrainer ? "sarah@eq.app" : "preview@eq.app",
-                  trainer_email: isTrainer ? "preview@eq.app" : nil,
+                  owner_id: isTrainer ? "sarah-id" : "preview-owner",
+                  trainer_id: isTrainer ? "preview-trainer" : nil,
                   profile_image: imgArrow, total_earnings: 8200, created_date: nil),
             Horse(id: "h3", name: "Storm Chaser", barn_name: nil,
                   breed: "Warmblood", color: "Dapple Grey", date_of_birth: "2019-01-10",
                   gender: "stallion", registration_number: nil, discipline: "Jumping",
-                  owner_email: isTrainer ? "mike@eq.app" : "preview@eq.app",
-                  trainer_email: isTrainer ? "preview@eq.app" : nil,
+                  owner_id: isTrainer ? "mike-id" : "preview-owner",
+                  trainer_id: isTrainer ? "preview-trainer" : nil,
                   profile_image: imgStorm, total_earnings: nil, created_date: nil),
             Horse(id: "h4", name: "Ruby Red", barn_name: "Ruby",
                   breed: "Arabian", color: "Chestnut", date_of_birth: "2017-09-03",
                   gender: "mare", registration_number: "AR-2017-0391", discipline: "Endurance",
-                  owner_email: isTrainer ? "lisa@eq.app" : "preview@eq.app",
-                  trainer_email: isTrainer ? "preview@eq.app" : nil,
+                  owner_id: isTrainer ? "lisa-id" : "preview-owner",
+                  trainer_id: isTrainer ? "preview-trainer" : nil,
                   profile_image: imgRuby, total_earnings: 3100, created_date: nil),
         ]
         isLoading = false
@@ -81,13 +81,13 @@ final class HorsesViewModel {
 
     @MainActor
     func create(_ horse: Horse) async throws {
-        let created: Horse = try await client.create(entity: "Horse", data: horse)
+        let created: Horse = try await client.create(table: "horses", data: horse)
         horses.insert(created, at: 0)
     }
 
     @MainActor
     func update(_ horse: Horse) async throws {
-        let updated: Horse = try await client.update(entity: "Horse", id: horse.id, data: horse)
+        let updated: Horse = try await client.update(table: "horses", id: horse.id, data: horse)
         if let idx = horses.firstIndex(where: { $0.id == horse.id }) {
             horses[idx] = updated
         }
@@ -95,7 +95,7 @@ final class HorsesViewModel {
 
     @MainActor
     func delete(_ horse: Horse) async throws {
-        try await client.delete(entity: "Horse", id: horse.id)
+        try await client.delete(table: "horses", id: horse.id)
         horses.removeAll { $0.id == horse.id }
     }
 }

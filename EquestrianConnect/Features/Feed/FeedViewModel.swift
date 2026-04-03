@@ -8,14 +8,14 @@ final class FeedViewModel {
     var isLoading = false
     var error: String?
 
-    private let client = Base44Client.shared
+    private let client = SupabaseClient.shared
 
-    func load(userEmail: String) async {
+    func load(userId: String) async {
         await MainActor.run { isLoading = true; error = nil }
-        async let postsTask: [Post] = try client.list(entity: "Post", sort: "-created_date", limit: 50)
+        async let postsTask: [Post] = try client.list(table: "posts", order: "created_date.desc", limit: 50)
         async let likesTask: [Like] = try client.filter(
-            entity: "Like",
-            query: ["user_email": userEmail],
+            table: "likes",
+            query: [URLQueryItem(name: "user_id", value: "eq.\(userId)")],
             limit: 200
         )
         do {
@@ -33,20 +33,20 @@ final class FeedViewModel {
     }
 
     @MainActor
-    func toggleLike(post: Post, userEmail: String) async {
+    func toggleLike(post: Post, userId: String) async {
         guard let idx = posts.firstIndex(where: { $0.id == post.id }) else { return }
         if myLikes.contains(post.id) {
             // Unlike
             myLikes.remove(post.id)
             posts[idx].like_count = max(0, (posts[idx].like_count ?? 0) - 1)
-            // Delete like from API (best effort)
             Task {
                 if let likes: [Like] = try? await client.filter(
-                    entity: "Like",
-                    query: ["post_id": post.id]
+                    table: "likes",
+                    query: [URLQueryItem(name: "post_id", value: "eq.\(post.id)"),
+                            URLQueryItem(name: "user_id", value: "eq.\(userId)")]
                 ) {
-                    if let mine = likes.first(where: { $0.user_email == userEmail }) {
-                        try? await client.delete(entity: "Like", id: mine.id)
+                    if let mine = likes.first {
+                        try? await client.delete(table: "likes", id: mine.id)
                     }
                 }
             }
@@ -55,21 +55,21 @@ final class FeedViewModel {
             myLikes.insert(post.id)
             posts[idx].like_count = (posts[idx].like_count ?? 0) + 1
             Task {
-                let like = Like(id: UUID().uuidString, post_id: post.id, user_email: userEmail)
-                let _: Like? = try? await client.create(entity: "Like", data: like)
+                let like = Like(id: UUID().uuidString, post_id: post.id, user_id: userId)
+                let _: Like? = try? await client.create(table: "likes", data: like)
             }
         }
     }
 
     @MainActor
     func createPost(_ post: Post) async throws {
-        let created: Post = try await client.create(entity: "Post", data: post)
+        let created: Post = try await client.create(table: "posts", data: post)
         posts.insert(created, at: 0)
     }
 
     @MainActor
     func deletePost(_ post: Post) async throws {
-        try await client.delete(entity: "Post", id: post.id)
+        try await client.delete(table: "posts", id: post.id)
         posts.removeAll { $0.id == post.id }
     }
 }

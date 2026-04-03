@@ -174,8 +174,8 @@ private struct OverviewTab: View {
             ("Age",             horse.age.map { "\($0) years" }),
             ("Discipline",      horse.discipline),
             ("Registration #",  horse.registration_number),
-            ("Owner",           horse.owner_email),
-            ("Trainer",         horse.trainer_email),
+            ("Owner",           horse.owner_id),
+            ("Trainer",         horse.trainer_id),
         ]
     }
 }
@@ -292,10 +292,10 @@ private struct DocumentsTab: View {
             return
         }
         Task {
-            if let docs: [HorseDocument] = try? await Base44Client.shared.filter(
-                entity: "HorseDocument",
-                query: ["horse_id": horse.id],
-                sort: "-date",
+            if let docs: [HorseDocument] = try? await SupabaseClient.shared.filter(
+                table: "horse_documents",
+                query: [URLQueryItem(name: "horse_id", value: "eq.\(horse.id)")],
+                order: "date.desc",
                 limit: 50
             ) {
                 await MainActor.run { documents = docs }
@@ -320,7 +320,7 @@ private struct DocumentCard: View {
                             .fill(document.typeColor.opacity(0.12))
                             .frame(width: 48, height: 48)
 
-                        if let data = document.imageData, let uiImg = UIImage(data: data) {
+                        if let data = document.image_data, let uiImg = UIImage(data: data) {
                             Image(uiImage: uiImg)
                                 .resizable()
                                 .scaledToFill()
@@ -381,7 +381,7 @@ private struct DocumentDetailSheet: View {
                     VStack(spacing: EQSpacing.lg) {
 
                         // Photo or icon header
-                        if let data = document.imageData, let uiImg = UIImage(data: data) {
+                        if let data = document.image_data, let uiImg = UIImage(data: data) {
                             Image(uiImage: uiImg)
                                 .resizable()
                                 .scaledToFit()
@@ -410,7 +410,7 @@ private struct DocumentDetailSheet: View {
                         }
 
                         // If photo was captured, still show title + badge below
-                        if document.imageData != nil {
+                        if document.image_data != nil {
                             VStack(spacing: EQSpacing.xs) {
                                 Text(document.title)
                                     .font(.eqSerif(.title3, weight: .bold))
@@ -762,7 +762,7 @@ private struct AddDocumentSheet: View {
             notes: nil,
             file_url: nil,
             file_name: attachedFileName,
-            imageData: capturedImage.flatMap { $0.jpegData(compressionQuality: 0.82) },
+            image_data: capturedImage.flatMap { $0.jpegData(compressionQuality: 0.82) },
             uploaded_by: nil,
             created_date: Date().iso8601DateString
         )
@@ -874,10 +874,10 @@ private struct TrainingTab: View {
     private func loadLogs() async {
         isLoading = true
         do {
-            logs = try await Base44Client.shared.filter(
-                entity: "TrainingLog",
-                query: ["horse_id": horse.id],
-                sort: "-date",
+            logs = try await SupabaseClient.shared.filter(
+                table: "training_logs",
+                query: [URLQueryItem(name: "horse_id", value: "eq.\(horse.id)")],
+                order: "date.desc",
                 limit: 30
             )
             let today = Date().iso8601DateString
@@ -890,7 +890,7 @@ private struct TrainingTab: View {
         let today = Date().iso8601DateString
         if isTodayLogged {
             if let log = logs.first(where: { $0.date == today }) {
-                try? await Base44Client.shared.delete(entity: "TrainingLog", id: log.id)
+                try? await SupabaseClient.shared.delete(table: "training_logs", id: log.id)
                 logs.removeAll { $0.date == today }
                 isTodayLogged = false
             }
@@ -899,9 +899,9 @@ private struct TrainingTab: View {
                 id: UUID().uuidString,
                 horse_id: horse.id,
                 date: today,
-                user_email: auth.user?.email
+                user_id: auth.user?.id
             )
-            if let created: TrainingLog = try? await Base44Client.shared.create(entity: "TrainingLog", data: new) {
+            if let created: TrainingLog = try? await SupabaseClient.shared.create(table: "training_logs", data: new) {
                 logs.insert(created, at: 0)
                 isTodayLogged = true
             }

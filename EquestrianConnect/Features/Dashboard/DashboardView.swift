@@ -51,17 +51,17 @@ struct DashboardView: View {
             .task {
                 guard let user = auth.user else { return }
                 if user.isTrainer {
-                    await vm.loadTrainer(trainerEmail: user.email)
+                    await vm.loadTrainer(trainerId: user.id)
                 } else {
-                    await vm.load(userEmail: user.email)
+                    await vm.load(userId: user.id)
                 }
             }
             .refreshable {
                 guard let user = auth.user else { return }
                 if user.isTrainer {
-                    await vm.loadTrainer(trainerEmail: user.email)
+                    await vm.loadTrainer(trainerId: user.id)
                 } else {
-                    await vm.load(userEmail: user.email)
+                    await vm.load(userId: user.id)
                 }
             }
         }
@@ -105,7 +105,7 @@ struct DashboardView: View {
                         .padding(.horizontal, EQSpacing.md)
                     ForEach(vm.recentConversations) { conv in
                         Button { selectedConv = conv } label: {
-                            DashConvCard(conv: conv, currentEmail: auth.user?.email ?? "")
+                            DashConvCard(conv: conv, currentUserId: auth.user?.id ?? "")
                         }
                         .buttonStyle(.eqPress)
                         .padding(.horizontal, EQSpacing.md)
@@ -314,8 +314,8 @@ private struct DashHorseCard: View {
 
             // Gradient scrim + text overlay
             VStack(alignment: .leading, spacing: 3) {
-                if showOwner, let owner = horse.owner_email {
-                    Text(owner.components(separatedBy: "@").first?.capitalized ?? owner)
+                if showOwner, let owner = horse.owner_id {
+                    Text(String(owner.prefix(8)))
                         .font(.eqFont(10, weight: .medium))
                         .foregroundStyle(.white.opacity(0.72))
                         .lineLimit(1)
@@ -429,11 +429,11 @@ private struct DashEventCard: View {
 
 private struct DashConvCard: View {
     let conv: Conversation
-    let currentEmail: String
+    let currentUserId: String
 
     private var displayName: String {
-        let other = conv.otherParticipant(currentEmail: currentEmail)
-        return other.components(separatedBy: "@").first?.capitalized ?? other
+        let other = conv.otherParticipant(currentUserId: currentUserId)
+        return String(other.prefix(8))
     }
 
     var body: some View {

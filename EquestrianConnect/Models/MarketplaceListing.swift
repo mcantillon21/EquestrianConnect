@@ -10,7 +10,7 @@ struct MarketplaceListing: Codable, Identifiable, Hashable {
     var images: [String]?
     var videos: [String]?
     var location: String?
-    var seller_email: String?
+    var seller_id: String?
     var seller_name: String?
     var seller_phone: String?
     var status: String?        // active | sold | pending

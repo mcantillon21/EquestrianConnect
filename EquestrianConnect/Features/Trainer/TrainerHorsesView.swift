@@ -6,13 +6,13 @@ struct TrainerHorsesView: View {
     @State private var selectedOwner = ""
 
     private var owners: [String] {
-        let emails = vm.horses.compactMap { $0.owner_email }
+        let emails = vm.horses.compactMap { $0.owner_id }
         return Array(Set(emails)).sorted()
     }
 
     private var filtered: [Horse] {
         guard !selectedOwner.isEmpty else { return vm.filtered }
-        return vm.filtered.filter { $0.owner_email == selectedOwner }
+        return vm.filtered.filter { $0.owner_id == selectedOwner }
     }
 
     var body: some View {
@@ -77,12 +77,12 @@ struct TrainerHorsesView: View {
                 HorseProfileView(horse: horse, vm: vm)
             }
             .task {
-                guard let email = auth.user?.email else { return }
-                await vm.load(userEmail: email, isTrainer: true)
+                guard let id = auth.user?.id else { return }
+                await vm.load(userId: id, isTrainer: true)
             }
             .refreshable {
-                guard let email = auth.user?.email else { return }
-                await vm.load(userEmail: email, isTrainer: true)
+                guard let id = auth.user?.id else { return }
+                await vm.load(userId: id, isTrainer: true)
             }
         }
     }
@@ -153,7 +153,7 @@ private struct TrainerHorseCard: View {
                             .foregroundStyle(Color.eqMuted)
                     }
 
-                    if let owner = horse.owner_email {
+                    if let owner = horse.owner_id {
                         HStack(spacing: 4) {
                             Image(systemName: "person.circle")
                                 .font(.caption2)
@@ -192,12 +192,12 @@ private struct TrainerHorseCard: View {
 
     private func checkToday() async {
         let today = Date().iso8601DateString
-        if let logs: [TrainingLog] = try? await Base44Client.shared.filter(
-            entity: "TrainingLog",
-            query: ["horse_id": horse.id],
-            limit: 5
+        if let logs: [TrainingLog] = try? await SupabaseClient.shared.filter(
+            table: "training_logs",
+            query: [URLQueryItem(name: "horse_id", value: "eq.\(horse.id)"),
+                    URLQueryItem(name: "date", value: "eq.\(today)")]
         ) {
-            todayRidden = logs.contains(where: { $0.date == today })
+            todayRidden = !logs.isEmpty
         }
     }
 }

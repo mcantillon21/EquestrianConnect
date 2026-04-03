@@ -12,7 +12,7 @@ final class MessagesViewModel {
         conversations.reduce(0) { $0 + ($1.unread_count ?? 0) }
     }
 
-    private let client = Base44Client.shared
+    private let client = SupabaseClient.shared
     private var pollingTask: Task<Void, Never>?
 
     @MainActor
@@ -29,8 +29,8 @@ final class MessagesViewModel {
         error = nil
         do {
             conversations = try await client.list(
-                entity: "Conversation",
-                sort: "-last_message_date",
+                table: "conversations",
+                order: "last_message_date.desc",
                 limit: 50
             )
         } catch {
@@ -48,75 +48,75 @@ final class MessagesViewModel {
         }
         conversations = [
             Conversation(id: "c1",
-                         participants: ["preview@eq.app", "Sarah Johnson"],
+                         participants: ["preview-owner", "Sarah Johnson"],
                          horse_id: "h1",
                          last_message: "See you Thursday at 9am! Midnight looked great yesterday.",
                          last_message_date: past(2),
                          unread_count: 2, created_date: nil),
             Conversation(id: "c2",
-                         participants: ["preview@eq.app", "Dr. Miller"],
+                         participants: ["preview-owner", "Dr. Miller"],
                          horse_id: "h3",
                          last_message: "Storm's bloodwork came back completely clean.",
                          last_message_date: past(20),
                          unread_count: 0, created_date: nil),
             Conversation(id: "c3",
-                         participants: ["preview@eq.app", "Mike Thompson"],
+                         participants: ["preview-owner", "Mike Thompson"],
                          horse_id: nil,
                          last_message: "Hay delivery confirmed for Friday morning.",
                          last_message_date: past(48),
                          unread_count: 0, created_date: nil),
         ]
         messages["c1"] = [
-            Message(id: "m1", conversation_id: "c1", sender_email: "Sarah Johnson",
-                    recipient_email: "preview@eq.app",
+            Message(id: "m1", conversation_id: "c1", sender_id: "sarah-id",
+                    recipient_id: "preview-owner",
                     content: "Hi! How did Midnight feel after last week's show?",
                     video_url: nil, horse_id: "h1", created_date: past(72)),
-            Message(id: "m2", conversation_id: "c1", sender_email: "preview@eq.app",
-                    recipient_email: "Sarah Johnson",
+            Message(id: "m2", conversation_id: "c1", sender_id: "preview-owner",
+                    recipient_id: "sarah-id",
                     content: "She was a little stiff the first day but back to normal by Wednesday.",
                     video_url: nil, horse_id: "h1", created_date: past(70)),
-            Message(id: "m3", conversation_id: "c1", sender_email: "Sarah Johnson",
-                    recipient_email: "preview@eq.app",
+            Message(id: "m3", conversation_id: "c1", sender_id: "sarah-id",
+                    recipient_id: "preview-owner",
                     content: "That's totally normal after a show weekend. I'd ice her legs tonight.",
                     video_url: nil, horse_id: "h1", created_date: past(68)),
-            Message(id: "m4", conversation_id: "c1", sender_email: "preview@eq.app",
-                    recipient_email: "Sarah Johnson",
+            Message(id: "m4", conversation_id: "c1", sender_id: "preview-owner",
+                    recipient_id: "sarah-id",
                     content: "Will do! Are we still on for the lateral work Thursday?",
                     video_url: nil, horse_id: "h1", created_date: past(6)),
-            Message(id: "m5", conversation_id: "c1", sender_email: "Sarah Johnson",
-                    recipient_email: "preview@eq.app",
+            Message(id: "m5", conversation_id: "c1", sender_id: "sarah-id",
+                    recipient_id: "preview-owner",
                     content: "Yes! I want to work on the half-pass. See you Thursday at 9am — Midnight looked great yesterday.",
                     video_url: nil, horse_id: "h1", created_date: past(2)),
         ]
         messages["c2"] = [
-            Message(id: "m6", conversation_id: "c2", sender_email: "preview@eq.app",
-                    recipient_email: "Dr. Miller",
+            Message(id: "m6", conversation_id: "c2", sender_id: "preview-owner",
+                    recipient_id: "vet-id",
                     content: "Hi Dr. Miller, just checking in on Storm's bloodwork from last week.",
                     video_url: nil, horse_id: "h3", created_date: past(96)),
-            Message(id: "m7", conversation_id: "c2", sender_email: "Dr. Miller",
-                    recipient_email: "preview@eq.app",
+            Message(id: "m7", conversation_id: "c2", sender_id: "vet-id",
+                    recipient_id: "preview-owner",
                     content: "Results are in! Everything looks excellent — iron, CBC, and metabolic panel all normal.",
                     video_url: nil, horse_id: "h3", created_date: past(72)),
-            Message(id: "m8", conversation_id: "c2", sender_email: "Dr. Miller",
-                    recipient_email: "preview@eq.app",
+            Message(id: "m8", conversation_id: "c2", sender_id: "vet-id",
+                    recipient_id: "preview-owner",
                     content: "Storm's bloodwork came back completely clean. He's in great shape for the spring season.",
                     video_url: nil, horse_id: "h3", created_date: past(20)),
         ]
         messages["c3"] = [
-            Message(id: "m9", conversation_id: "c3", sender_email: "preview@eq.app",
-                    recipient_email: "Mike Thompson",
+            Message(id: "m9", conversation_id: "c3", sender_id: "preview-owner",
+                    recipient_id: "mike-id",
                     content: "Hey Mike, can we get an extra 10 bales of timothy this week? Ruby is going through it fast.",
                     video_url: nil, horse_id: nil, created_date: past(72)),
-            Message(id: "m10", conversation_id: "c3", sender_email: "Mike Thompson",
-                    recipient_email: "preview@eq.app",
+            Message(id: "m10", conversation_id: "c3", sender_id: "mike-id",
+                    recipient_id: "preview-owner",
                     content: "No problem. I'll add it to the order. Timothy or orchard grass mix?",
                     video_url: nil, horse_id: nil, created_date: past(70)),
-            Message(id: "m11", conversation_id: "c3", sender_email: "preview@eq.app",
-                    recipient_email: "Mike Thompson",
+            Message(id: "m11", conversation_id: "c3", sender_id: "preview-owner",
+                    recipient_id: "mike-id",
                     content: "Timothy please. Thanks!",
                     video_url: nil, horse_id: nil, created_date: past(69)),
-            Message(id: "m12", conversation_id: "c3", sender_email: "Mike Thompson",
-                    recipient_email: "preview@eq.app",
+            Message(id: "m12", conversation_id: "c3", sender_id: "mike-id",
+                    recipient_id: "preview-owner",
                     content: "Hay delivery confirmed for Friday morning.",
                     video_url: nil, horse_id: nil, created_date: past(48)),
         ]
@@ -126,9 +126,9 @@ final class MessagesViewModel {
     func loadMessages(conversationId: String) async {
         do {
             let msgs: [Message] = try await client.filter(
-                entity: "Message",
-                query: ["conversation_id": conversationId],
-                sort: "created_date",
+                table: "messages",
+                query: [URLQueryItem(name: "conversation_id", value: "eq.\(conversationId)")],
+                order: "created_date.asc",
                 limit: 100
             )
             await MainActor.run { messages[conversationId] = msgs }
@@ -139,16 +139,16 @@ final class MessagesViewModel {
     }
 
     @MainActor
-    func sendMessage(conversationId: String, content: String, senderEmail: String, recipientEmail: String) async throws {
+    func sendMessage(conversationId: String, content: String, senderId: String, recipientId: String) async throws {
         let msg = Message(
             id: UUID().uuidString,
             conversation_id: conversationId,
-            sender_email: senderEmail,
-            recipient_email: recipientEmail,
+            sender_id: senderId,
+            recipient_id: recipientId,
             content: content,
             created_date: Date().iso8601String
         )
-        let created: Message = try await client.create(entity: "Message", data: msg)
+        let created: Message = try await client.create(table: "messages", data: msg)
         messages[conversationId, default: []].append(created)
 
         // Update conversation's last message
@@ -159,19 +159,19 @@ final class MessagesViewModel {
     }
 
     @MainActor
-    func startConversation(with otherEmail: String, currentEmail: String, horseId: String? = nil) async throws -> Conversation {
+    func startConversation(with otherId: String, currentUserId: String, horseId: String? = nil) async throws -> Conversation {
         // Check if conversation already exists
         if let existing = conversations.first(where: {
-            $0.participants.contains(currentEmail) && $0.participants.contains(otherEmail)
+            $0.participants.contains(currentUserId) && $0.participants.contains(otherId)
         }) {
             return existing
         }
         let conv = Conversation(
             id: UUID().uuidString,
-            participants: [currentEmail, otherEmail],
+            participants: [currentUserId, otherId],
             horse_id: horseId
         )
-        let created: Conversation = try await client.create(entity: "Conversation", data: conv)
+        let created: Conversation = try await client.create(table: "conversations", data: conv)
         conversations.insert(created, at: 0)
         return created
     }

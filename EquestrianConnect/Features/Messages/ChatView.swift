@@ -6,8 +6,8 @@ struct ChatView: View {
     @Environment(AuthManager.self) private var auth
     @State private var error: String?
 
-    private var myEmail: String { auth.user?.email ?? "" }
-    private var otherEmail: String { conversation.otherParticipant(currentEmail: myEmail) }
+    private var myId: String { auth.user?.id ?? "" }
+    private var otherId: String { conversation.otherParticipant(currentUserId: myId) }
     private var messages: [Message] { vm.messages[conversation.id] ?? [] }
 
     var body: some View {
@@ -28,15 +28,15 @@ struct ChatView: View {
                     try await vm.sendMessage(
                         conversationId: conversation.id,
                         content: content,
-                        senderEmail: myEmail,
-                        recipientEmail: otherEmail
+                        senderId: myId,
+                        recipientId: otherId
                     )
                 } onError: { msg in
                     error = msg
                 }
             }
         }
-        .navigationTitle(otherEmail)
+        .navigationTitle(String(otherId.prefix(8)))
         .navigationBarTitleDisplayMode(.inline)
         .eqNavAppearance()
         .task {
@@ -152,7 +152,7 @@ private struct MessageBubble: View {
     @Environment(AuthManager.self) private var auth
 
     private var isFromMe: Bool {
-        message.sender_email == (auth.user?.email ?? "")
+        message.sender_id == (auth.user?.id ?? "")
     }
 
     var body: some View {

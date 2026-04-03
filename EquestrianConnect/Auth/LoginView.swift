@@ -4,9 +4,6 @@ struct LoginView: View {
     @Environment(AuthManager.self) private var auth
 
     @State private var email = ""
-    @State private var password = ""
-    @State private var isRegistering = false
-    @State private var fullName = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
 
@@ -36,7 +33,7 @@ struct LoginView: View {
                             .multilineTextAlignment(.center)
                             .lineSpacing(4)
 
-                        Text(isRegistering ? "Create your account" : "Welcome back")
+                        Text("Sign in with your email")
                             .font(.subheadline)
                             .foregroundStyle(Color.eqSandyBrown.opacity(0.9))
                     }
@@ -48,15 +45,6 @@ struct LoginView: View {
                             ErrorBanner(message: err) { errorMessage = nil }
                         }
 
-                        if isRegistering {
-                            EQTextField(
-                                label: "Full Name",
-                                placeholder: "Jane Smith",
-                                text: $fullName,
-                                icon: "person"
-                            )
-                        }
-
                         EQTextField(
                             label: "Email",
                             placeholder: "you@example.com",
@@ -66,37 +54,18 @@ struct LoginView: View {
                         )
                         .textInputAutocapitalization(.never)
 
-                        EQTextField(
-                            label: "Password",
-                            placeholder: "••••••••",
-                            text: $password,
-                            icon: "lock",
-                            isSecure: true
-                        )
+                        Text("We'll send you a magic link to sign in — no password needed.")
+                            .font(.eqFont(13, weight: .regular))
+                            .foregroundStyle(Color.eqMuted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                         EQPrimaryButton(
-                            title: isRegistering ? "Create Account" : "Sign In",
+                            title: "Send Magic Link",
                             isLoading: isLoading
                         ) {
                             submit()
                         }
                         .padding(.top, EQSpacing.sm)
-
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                isRegistering.toggle()
-                                errorMessage = nil
-                            }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text(isRegistering ? "Already have an account?" : "Don't have an account?")
-                                    .foregroundStyle(Color.eqDarkBrown.opacity(0.7))
-                                Text(isRegistering ? "Sign In" : "Create one")
-                                    .foregroundStyle(Color.eqSaddleBrown)
-                                    .fontWeight(.semibold)
-                            }
-                            .font(.subheadline)
-                        }
                     }
                     .padding(EQSpacing.lg)
                     .background(
@@ -106,7 +75,7 @@ struct LoginView: View {
                     )
                     .padding(.horizontal, EQSpacing.md)
 
-                    // Demo mode — prominent
+                    // Demo mode
                     VStack(spacing: EQSpacing.sm) {
                         HStack {
                             Rectangle().fill(Color.eqSandyBrown.opacity(0.3)).frame(height: 0.5)
@@ -146,27 +115,19 @@ struct LoginView: View {
     }
 
     private func submit() {
-        guard !email.isEmpty, !password.isEmpty else {
-            errorMessage = "Please fill in all fields."
+        guard !email.isEmpty else {
+            errorMessage = "Please enter your email."
             return
         }
         guard email.isValidEmail else {
             errorMessage = "Please enter a valid email address."
             return
         }
-        if isRegistering && fullName.isEmpty {
-            errorMessage = "Please enter your full name."
-            return
-        }
         isLoading = true
         errorMessage = nil
         Task {
             do {
-                if isRegistering {
-                    try await auth.register(email: email, password: password, fullName: fullName)
-                } else {
-                    try await auth.login(email: email, password: password)
-                }
+                try await auth.sendMagicLink(email: email)
             } catch {
                 errorMessage = error.localizedDescription
             }

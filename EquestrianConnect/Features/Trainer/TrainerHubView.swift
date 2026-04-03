@@ -52,7 +52,7 @@ struct TrainerHubView: View {
                                                 isRidden: trainingLogs.contains(where: {
                                                     $0.horse_id == horse.id && $0.date == Date().iso8601DateString
                                                 }),
-                                                trainerEmail: auth.user?.email ?? ""
+                                                trainerId: auth.user?.id ?? ""
                                             ) { log in
                                                 if let log {
                                                     trainingLogs.append(log)
@@ -80,7 +80,7 @@ struct TrainerHubView: View {
                                     VStack(spacing: EQSpacing.sm) {
                                         EQSectionRow(title: "Recent Messages")
                                         ForEach(conversations.prefix(3)) { conv in
-                                            HubConvRow(conv: conv, currentEmail: auth.user?.email ?? "")
+                                            HubConvRow(conv: conv, currentUserId: auth.user?.id ?? "")
                                         }
                                     }
                                 }
@@ -117,7 +117,7 @@ struct TrainerHubView: View {
 
     @MainActor
     private func load() async {
-        guard let email = auth.user?.email else { return }
+        guard let userId = auth.user?.id else { return }
 
         #if targetEnvironment(simulator)
         loadMock()
@@ -130,17 +130,17 @@ struct TrainerHubView: View {
 
         isLoading = true
         error = nil
-        async let horsesTask: [Horse] = try Base44Client.shared.filter(
-            entity: "Horse", query: ["trainer_email": email], sort: "name", limit: 100
+        async let horsesTask: [Horse] = try SupabaseClient.shared.filter(
+            table: "horses", query: [URLQueryItem(name: "trainer_id", value: "eq.\(userId)")], order: "name.asc", limit: 100
         )
-        async let eventsTask: [CalendarEvent] = try Base44Client.shared.filter(
-            entity: "CalendarEvent", query: ["user_email": email], sort: "start_date", limit: 20
+        async let eventsTask: [CalendarEvent] = try SupabaseClient.shared.filter(
+            table: "calendar_events", query: [URLQueryItem(name: "user_id", value: "eq.\(userId)")], order: "start_date.asc", limit: 20
         )
-        async let logsTask: [TrainingLog] = try Base44Client.shared.filter(
-            entity: "TrainingLog", query: ["user_email": email], sort: "-date", limit: 200
+        async let logsTask: [TrainingLog] = try SupabaseClient.shared.filter(
+            table: "training_logs", query: [URLQueryItem(name: "user_id", value: "eq.\(userId)")], order: "date.desc", limit: 200
         )
-        async let convsTask: [Conversation] = try Base44Client.shared.list(
-            entity: "Conversation", sort: "-last_message_date", limit: 10
+        async let convsTask: [Conversation] = try SupabaseClient.shared.list(
+            table: "conversations", order: "last_message_date.desc", limit: 10
         )
         do {
             let (h, e, l, c) = try await (horsesTask, eventsTask, logsTask, convsTask)
@@ -169,25 +169,25 @@ struct TrainerHubView: View {
             Horse(id: "h1", name: "Midnight Star", barn_name: "Midnight",
                   breed: "Thoroughbred", color: "Black", date_of_birth: "2018-04-15",
                   gender: "mare", registration_number: nil, discipline: "Dressage",
-                  owner_email: "jordan@eq.app", trainer_email: "preview@eq.app",
+                  owner_id: "jordan@eq.app", trainer_id: "preview@eq.app",
                   profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Applebite-Gentlemen.jpg/400px-Applebite-Gentlemen.jpg",
                   total_earnings: nil, created_date: nil),
             Horse(id: "h2", name: "Golden Arrow", barn_name: "Arrow",
                   breed: "Quarter Horse", color: "Palomino", date_of_birth: "2015-07-22",
                   gender: "gelding", registration_number: nil, discipline: "Western Pleasure",
-                  owner_email: "sarah@eq.app", trainer_email: "preview@eq.app",
+                  owner_id: "sarah@eq.app", trainer_id: "preview@eq.app",
                   profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Mare_and_foal_%28Kvetina-Marie%29.jpg/400px-Mare_and_foal_%28Kvetina-Marie%29.jpg",
                   total_earnings: nil, created_date: nil),
             Horse(id: "h3", name: "Storm Chaser", barn_name: nil,
                   breed: "Warmblood", color: "Dapple Grey", date_of_birth: "2019-01-10",
                   gender: "stallion", registration_number: nil, discipline: "Jumping",
-                  owner_email: "mike@eq.app", trainer_email: "preview@eq.app",
+                  owner_id: "mike@eq.app", trainer_id: "preview@eq.app",
                   profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/WCLV07m.JPG/400px-WCLV07m.JPG",
                   total_earnings: nil, created_date: nil),
             Horse(id: "h4", name: "Ruby Red", barn_name: "Ruby",
                   breed: "Arabian", color: "Chestnut", date_of_birth: "2017-09-03",
                   gender: "mare", registration_number: nil, discipline: "Endurance",
-                  owner_email: "lisa@eq.app", trainer_email: "preview@eq.app",
+                  owner_id: "lisa@eq.app", trainer_id: "preview@eq.app",
                   profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Halterstandingshotarabianone.jpg/400px-Halterstandingshotarabianone.jpg",
                   total_earnings: nil, created_date: nil),
         ]
@@ -196,19 +196,19 @@ struct TrainerHubView: View {
             CalendarEvent(id: "e1", title: "Farrier Visit", type: "farrier",
                           start_date: future(1), end_date: nil, all_day: false,
                           location: "Rolling Hills Barn", description: nil,
-                          horse_ids: ["h1", "h2"], user_email: "preview@eq.app",
+                          horse_ids: ["h1", "h2"], user_id: "preview@eq.app",
                           is_recurring: false, recurrence_frequency: nil,
                           recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
             CalendarEvent(id: "e2", title: "Dressage Lesson — Midnight", type: "lesson",
                           start_date: future(3), end_date: nil, all_day: false,
                           location: "Arena B", description: nil,
-                          horse_ids: ["h1"], user_email: "preview@eq.app",
+                          horse_ids: ["h1"], user_id: "preview@eq.app",
                           is_recurring: true, recurrence_frequency: "weekly",
                           recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
             CalendarEvent(id: "e3", title: "Spring Horse Show", type: "horse_show",
                           start_date: future(12), end_date: nil, all_day: true,
                           location: "County Equestrian Center", description: nil,
-                          horse_ids: ["h1", "h2", "h3"], user_email: "preview@eq.app",
+                          horse_ids: ["h1", "h2", "h3"], user_id: "preview@eq.app",
                           is_recurring: false, recurrence_frequency: nil,
                           recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
         ]
@@ -216,7 +216,7 @@ struct TrainerHubView: View {
         // Pre-mark Midnight as ridden today for a realistic demo
         trainingLogs = [
             TrainingLog(id: "l1", horse_id: "h1", date: now.iso8601DateString,
-                        user_email: "preview@eq.app", created_date: nil),
+                        user_id: "preview@eq.app", created_date: nil),
         ]
 
         conversations = [
@@ -270,7 +270,7 @@ private struct TrainerHeroHeader: View {
 private struct TrainingCheckRow: View {
     let horse: Horse
     let isRidden: Bool
-    let trainerEmail: String
+    let trainerId: String
     let onToggle: (TrainingLog?) -> Void
 
     @State private var isBusy = false
@@ -339,17 +339,17 @@ private struct TrainingCheckRow: View {
         let today = Date().iso8601DateString
         if isRidden {
             // Find and delete the log
-            if let logs: [TrainingLog] = try? await Base44Client.shared.filter(
-                entity: "TrainingLog",
-                query: ["horse_id": horse.id],
-                limit: 50
-            ), let existing = logs.first(where: { $0.date == today }) {
-                try? await Base44Client.shared.delete(entity: "TrainingLog", id: existing.id)
+            if let logs: [TrainingLog] = try? await SupabaseClient.shared.filter(
+                table: "training_logs",
+                query: [URLQueryItem(name: "horse_id", value: "eq.\(horse.id)"),
+                        URLQueryItem(name: "date", value: "eq.\(today)")]
+            ), let existing = logs.first {
+                try? await SupabaseClient.shared.delete(table: "training_logs", id: existing.id)
             }
             onToggle(nil)
         } else {
-            let log = TrainingLog(id: UUID().uuidString, horse_id: horse.id, date: today, user_email: trainerEmail)
-            let created: TrainingLog? = try? await Base44Client.shared.create(entity: "TrainingLog", data: log)
+            let log = TrainingLog(id: UUID().uuidString, horse_id: horse.id, date: today, user_id: trainerId)
+            let created: TrainingLog? = try? await SupabaseClient.shared.create(table: "training_logs", data: log)
             onToggle(created)
         }
         isBusy = false
@@ -390,14 +390,14 @@ private struct HubEventRow: View {
 
 private struct HubConvRow: View {
     let conv: Conversation
-    let currentEmail: String
+    let currentUserId: String
 
     var body: some View {
         EQCard {
             HStack(spacing: EQSpacing.md) {
-                InitialsAvatar(text: conv.otherParticipant(currentEmail: currentEmail), size: 40)
+                InitialsAvatar(text: conv.otherParticipant(currentUserId: currentUserId), size: 40)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(conv.otherParticipant(currentEmail: currentEmail))
+                    Text(conv.otherParticipant(currentUserId: currentUserId))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.eqDarkBrown)
                     if let last = conv.last_message {

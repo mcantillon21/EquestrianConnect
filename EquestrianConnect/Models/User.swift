@@ -6,6 +6,7 @@ struct User: Codable, Identifiable, Hashable {
     var full_name: String?
     var user_type: String?  // "owner" | "trainer"
     var profile_image: String?
+    var created_date: String?
 
     var displayName: String { full_name ?? email }
     var isOwner: Bool  { user_type == "owner" }

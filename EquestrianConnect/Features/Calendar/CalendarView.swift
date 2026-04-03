@@ -76,11 +76,11 @@ struct CalendarView: View {
             }
             .task {
                 guard let user = auth.user else { return }
-                await vm.load(userEmail: user.email)
+                await vm.load(userId: user.id)
             }
             .refreshable {
                 guard let user = auth.user else { return }
-                await vm.load(userEmail: user.email)
+                await vm.load(userId: user.id)
             }
         }
     }

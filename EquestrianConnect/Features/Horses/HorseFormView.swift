@@ -136,7 +136,7 @@ struct HorseFormView: View {
         gender = h.gender ?? ""
         discipline = h.discipline ?? ""
         registrationNumber = h.registration_number ?? ""
-        trainerEmail = h.trainer_email ?? ""
+        trainerEmail = h.trainer_id ?? ""
         uploadedImageURL = h.profile_image
         if let dob = h.date_of_birth?.toDate() {
             dateOfBirth = dob
@@ -150,7 +150,7 @@ struct HorseFormView: View {
         selectedImageData = data
         isUploading = true
         do {
-            uploadedImageURL = try await Base44Client.shared.uploadFile(imageData: data)
+            uploadedImageURL = try await SupabaseClient.shared.uploadFile(imageData: data)
         } catch {
             self.error = "Image upload failed: \(error.localizedDescription)"
         }
@@ -175,8 +175,8 @@ struct HorseFormView: View {
             gender: gender.isEmpty ? nil : gender,
             registration_number: registrationNumber.isEmpty ? nil : registrationNumber,
             discipline: discipline.isEmpty ? nil : discipline,
-            owner_email: editingHorse?.owner_email ?? auth.user?.email,
-            trainer_email: trainerEmail.isEmpty ? nil : trainerEmail,
+            owner_id: editingHorse?.owner_id ?? auth.user?.id,
+            trainer_id: trainerEmail.isEmpty ? nil : trainerEmail,
             profile_image: uploadedImageURL ?? editingHorse?.profile_image,
             total_earnings: editingHorse?.total_earnings
         )

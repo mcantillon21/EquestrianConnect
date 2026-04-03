@@ -2,7 +2,7 @@ import Foundation
 
 struct Post: Codable, Identifiable, Hashable {
     var id: String
-    var author_email: String?
+    var author_id: String?
     var author_name: String?
     var caption: String?
     var media_type: String?    // photo | video
@@ -24,7 +24,7 @@ struct Post: Codable, Identifiable, Hashable {
 struct Like: Codable, Identifiable, Hashable {
     var id: String
     var post_id: String
-    var user_email: String?
+    var user_id: String?
     var created_date: String?
 
     static func == (lhs: Like, rhs: Like) -> Bool { lhs.id == rhs.id }
