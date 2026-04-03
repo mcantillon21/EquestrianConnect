@@ -43,6 +43,7 @@ struct FeedView: View {
             }
             .navigationTitle("Community")
             .eqNavAppearance()
+            .eqMoreMenu()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

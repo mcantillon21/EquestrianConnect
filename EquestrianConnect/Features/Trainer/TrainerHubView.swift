@@ -107,15 +107,9 @@ struct TrainerHubView: View {
                         .font(.eqSerif(.headline, weight: .bold))
                         .foregroundStyle(.white)
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    InitialsAvatar(
-                        text: auth.user?.displayName ?? "?",
-                        size: 34,
-                        background: Color.eqSandyBrown
-                    )
-                }
             }
             .eqNavAppearance()
+            .eqMoreMenu()
             .task { await load() }
             .refreshable { await load() }
         }

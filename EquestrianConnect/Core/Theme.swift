@@ -155,6 +155,49 @@ extension View {
     func eqNavAppearance() -> some View {
         modifier(EQNavigationAppearance())
     }
+
+    func eqMoreMenu() -> some View {
+        modifier(EQMoreMenuModifier())
+    }
+}
+
+// MARK: - More Menu (three-dot toolbar button)
+
+struct EQMoreMenuModifier: ViewModifier {
+    @Environment(AuthManager.self) private var auth
+    @State private var showLogoutAlert = false
+
+    func body(content: Content) -> some View {
+        content
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        NavigationLink { ProfileView() } label: {
+                            Label("My Profile", systemImage: "person")
+                        }
+                        #if DEBUG
+                        NavigationLink { AdminUsersView() } label: {
+                            Label("All Users (Admin)", systemImage: "person.2.badge.key")
+                        }
+                        #endif
+                        Divider()
+                        Button(role: .destructive) { showLogoutAlert = true } label: {
+                            Label("Sign Out", systemImage: "arrow.right.square")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle.fill")
+                            .font(.system(size: 17))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
+                }
+            }
+            .alert("Sign Out", isPresented: $showLogoutAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Sign Out", role: .destructive) { auth.logout() }
+            } message: {
+                Text("Are you sure you want to sign out?")
+            }
+    }
 }
 
 // MARK: - Event Type Helpers

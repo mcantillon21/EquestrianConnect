@@ -43,6 +43,7 @@ struct HorsesView: View {
             }
             .navigationTitle("My Horses")
             .eqNavAppearance()
+            .eqMoreMenu()
             .searchable(text: $vm.searchText, prompt: "Search horses…")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

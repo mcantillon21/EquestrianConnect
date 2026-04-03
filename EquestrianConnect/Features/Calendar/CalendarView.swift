@@ -57,6 +57,7 @@ struct CalendarView: View {
             }
             .navigationTitle("Calendar")
             .eqNavAppearance()
+            .eqMoreMenu()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

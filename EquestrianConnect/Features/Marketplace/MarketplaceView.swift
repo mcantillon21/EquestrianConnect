@@ -61,6 +61,7 @@ struct MarketplaceView: View {
             }
             .navigationTitle("Marketplace")
             .eqNavAppearance()
+            .eqMoreMenu()
             .searchable(text: $vm.searchText, prompt: "Search listings…")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

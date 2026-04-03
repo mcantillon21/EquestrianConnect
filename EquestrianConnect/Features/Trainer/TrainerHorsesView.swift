@@ -71,6 +71,7 @@ struct TrainerHorsesView: View {
             }
             .navigationTitle("Client Horses")
             .eqNavAppearance()
+            .eqMoreMenu()
             .searchable(text: $vm.searchText, prompt: "Search horses…")
             .navigationDestination(for: Horse.self) { horse in
                 HorseProfileView(horse: horse, vm: vm)

@@ -40,6 +40,7 @@ struct ConversationsView: View {
             }
             .navigationTitle("Messages")
             .eqNavAppearance()
+            .eqMoreMenu()
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

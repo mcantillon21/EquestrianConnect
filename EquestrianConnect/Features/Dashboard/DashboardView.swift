@@ -34,15 +34,9 @@ struct DashboardView: View {
                         .font(.eqFont(15, weight: .semibold))
                         .foregroundStyle(.white)
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    InitialsAvatar(
-                        text: auth.user?.displayName ?? "?",
-                        size: 32,
-                        background: Color.eqLeather.opacity(0.6)
-                    )
-                }
             }
             .eqNavAppearance()
+            .eqMoreMenu()
             .navigationDestination(for: Horse.self) { horse in
                 HorseProfileView(horse: horse, vm: horsesVM)
             }
