@@ -122,7 +122,7 @@ struct ProfileView: View {
     private var appSection: some View {
         ProfileSection(title: "App") {
             ProfileRow(label: "Version", value: "1.0.0")
-            ProfileRow(label: "Backend", value: "Base44")
+            ProfileRow(label: "Backend", value: "Supabase")
         }
     }
 
