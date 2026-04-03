@@ -28,12 +28,12 @@ struct MainTabView: View {
         normal.normal.iconColor = UIColor(Color.eqTaupe.opacity(0.5))
         normal.normal.titleTextAttributes = [
             .foregroundColor: UIColor(Color.eqTaupe.opacity(0.5)),
-            .font: UIFont(name: "AvenirNext-Medium", size: 9) ?? .systemFont(ofSize: 9, weight: .medium)
+            .font: UIFont(name: "AvenirNext-Medium", size: 10) ?? .systemFont(ofSize: 10, weight: .medium)
         ]
         normal.selected.iconColor = UIColor(Color.eqStraw)
         normal.selected.titleTextAttributes = [
             .foregroundColor: UIColor(Color.eqStraw),
-            .font: UIFont(name: "AvenirNext-DemiBold", size: 9) ?? .systemFont(ofSize: 9, weight: .semibold)
+            .font: UIFont(name: "AvenirNext-DemiBold", size: 10) ?? .systemFont(ofSize: 10, weight: .semibold)
         ]
         appearance.stackedLayoutAppearance = normal
         UITabBar.appearance().standardAppearance = appearance
@@ -55,7 +55,7 @@ private struct OwnerTabView: View {
             HorsesView()
                 .tabItem { Label("Horses", systemImage: "figure.equestrian.sports") }
                 .tag(1)
-            FeedView()
+            CommunityView()
                 .tabItem { Label("Community", systemImage: "person.2.fill") }
                 .tag(2)
             CalendarView()
@@ -65,9 +65,6 @@ private struct OwnerTabView: View {
                 .tabItem { Label("Messages", systemImage: "message.fill") }
                 .badge(messagesVM.totalUnreadCount > 0 ? messagesVM.totalUnreadCount : 0)
                 .tag(4)
-            MarketplaceView()
-                .tabItem { Label("Marketplace", systemImage: "tag.fill") }
-                .tag(5)
         }
         .tint(Color.eqSandyBrown)
         .onChange(of: selectedTab) { _, _ in HapticFeedback.selection() }
@@ -88,7 +85,7 @@ private struct TrainerTabView: View {
             TrainerHorsesView()
                 .tabItem { Label("Horses", systemImage: "figure.equestrian.sports") }
                 .tag(1)
-            FeedView()
+            CommunityView()
                 .tabItem { Label("Community", systemImage: "person.2.fill") }
                 .tag(2)
             CalendarView()
@@ -98,9 +95,6 @@ private struct TrainerTabView: View {
                 .tabItem { Label("Messages", systemImage: "message.fill") }
                 .badge(messagesVM.totalUnreadCount > 0 ? messagesVM.totalUnreadCount : 0)
                 .tag(4)
-            MarketplaceView()
-                .tabItem { Label("Marketplace", systemImage: "tag.fill") }
-                .tag(5)
         }
         .tint(Color.eqSandyBrown)
         .onChange(of: selectedTab) { _, _ in HapticFeedback.selection() }
