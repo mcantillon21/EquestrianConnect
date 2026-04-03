@@ -6,6 +6,8 @@ struct HorseProfileView: View {
     let vm: HorsesViewModel
     @State private var showEditSheet = false
     @State private var showDeleteAlert = false
+    @State private var showShareSheet = false
+    @State private var shareDocuments: [HorseDocument] = []
     @State private var selectedTab = "overview"
     @Environment(\.dismiss) private var dismiss
 
@@ -64,6 +66,9 @@ struct HorseProfileView: View {
         .eqNavAppearance()
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                Button { prepareAndShare() } label: {
+                    Image(systemName: "square.and.arrow.up").foregroundStyle(.white)
+                }
                 Button { showEditSheet = true } label: {
                     Image(systemName: "pencil").foregroundStyle(.white)
                 }
@@ -76,6 +81,9 @@ struct HorseProfileView: View {
                 }
             }
         }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [buildShareText()])
+        }
         .sheet(isPresented: $showEditSheet) {
             HorseFormView(vm: vm, editingHorse: horse)
         }
@@ -86,6 +94,149 @@ struct HorseProfileView: View {
             }
         } message: { Text("This action cannot be undone.") }
     }
+
+    // MARK: - Share
+
+    private func prepareAndShare() {
+        #if targetEnvironment(simulator)
+        shareDocuments = HorseDocument.mockDocuments(for: horse.id)
+        showShareSheet = true
+        return
+        #endif
+        if isDemoMode {
+            shareDocuments = HorseDocument.mockDocuments(for: horse.id)
+            showShareSheet = true
+            return
+        }
+        Task {
+            if let docs: [HorseDocument] = try? await SupabaseClient.shared.filter(
+                table: "horse_documents",
+                query: [URLQueryItem(name: "horse_id", value: "eq.\(horse.id)")],
+                order: "date.desc", limit: 50
+            ) {
+                await MainActor.run { shareDocuments = docs }
+            }
+            await MainActor.run { showShareSheet = true }
+        }
+    }
+
+    private func buildShareText() -> String {
+        var lines: [String] = []
+
+        // Header
+        lines.append("🐴 \(horse.name)")
+        if let barn = horse.barn_name { lines.append("Barn name: \(barn)") }
+        lines.append("")
+
+        // Vitals
+        var vitals: [String] = []
+        if let breed = horse.breed { vitals.append("Breed: \(breed)") }
+        if let color = horse.color { vitals.append("Color: \(color)") }
+        if let gender = horse.gender { vitals.append("Gender: \(gender.capitalized)") }
+        if let age = horse.age { vitals.append("Age: \(age) years") }
+        if let dob = horse.date_of_birth { vitals.append("DOB: \(dob.toDisplayDate())") }
+        if let disc = horse.discipline { vitals.append("Discipline: \(disc)") }
+        if let reg = horse.registration_number { vitals.append("Registration: \(reg)") }
+        lines.append(contentsOf: vitals)
+
+        // Document status
+        let docStatus = documentStatusSummary()
+        if !docStatus.isEmpty {
+            lines.append("")
+            lines.append("— Records —")
+            lines.append(contentsOf: docStatus)
+        }
+
+        lines.append("")
+        lines.append("Shared from Equestrian Connect")
+
+        return lines.joined(separator: "\n")
+    }
+
+    private func documentStatusSummary() -> [String] {
+        var status: [String] = []
+        let now = Date()
+
+        // Coggins
+        if let coggins = latestDoc(type: "coggins") {
+            if let dateStr = coggins.date, let date = dateStr.toDate() {
+                let expiryDate = Calendar.current.date(byAdding: .year, value: 1, to: date) ?? date
+                let daysLeft = Calendar.current.dateComponents([.day], from: now, to: expiryDate).day ?? 0
+                if daysLeft > 30 {
+                    status.append("✅ Coggins: Negative (\(dateStr.toDisplayDate())) — valid \(daysLeft)d")
+                } else if daysLeft > 0 {
+                    status.append("⚠️ Coggins: Expires in \(daysLeft) days")
+                } else {
+                    status.append("❌ Coggins: Expired")
+                }
+            } else {
+                status.append("✅ Coggins: On file")
+            }
+        } else {
+            status.append("❌ Coggins: Not on file")
+        }
+
+        // Health Certificate
+        if let hc = latestDoc(type: "health_certificate") {
+            if let dateStr = hc.date, let date = dateStr.toDate() {
+                let expiryDate = Calendar.current.date(byAdding: .day, value: 30, to: date) ?? date
+                let daysLeft = Calendar.current.dateComponents([.day], from: now, to: expiryDate).day ?? 0
+                if daysLeft > 0 {
+                    status.append("✅ Health Cert: Valid \(daysLeft)d (\(dateStr.toDisplayDate()))")
+                } else {
+                    status.append("⚠️ Health Cert: Expired")
+                }
+            } else {
+                status.append("✅ Health Cert: On file")
+            }
+        }
+
+        // Vaccinations
+        if let vax = latestDoc(type: "vaccine") {
+            if let dateStr = vax.date {
+                status.append("💉 Vaccinations: \(dateStr.toDisplayDate())")
+            } else {
+                status.append("💉 Vaccinations: On file")
+            }
+        }
+
+        // Vet Record
+        if let vet = latestDoc(type: "vet_record") {
+            if let dateStr = vet.date {
+                status.append("🩺 Last Vet Exam: \(dateStr.toDisplayDate())")
+            }
+        }
+
+        // Insurance
+        if let ins = latestDoc(type: "insurance") {
+            if let notes = ins.notes, notes.lowercased().contains("policy") {
+                status.append("🛡️ Insurance: Active")
+            } else {
+                status.append("🛡️ Insurance: On file")
+            }
+        }
+
+        return status
+    }
+
+    private func latestDoc(type: String) -> HorseDocument? {
+        shareDocuments
+            .filter { $0.type == type }
+            .sorted { ($0.date ?? "") > ($1.date ?? "") }
+            .first
+    }
+}
+
+// MARK: - Share Sheet
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - Hero Header
