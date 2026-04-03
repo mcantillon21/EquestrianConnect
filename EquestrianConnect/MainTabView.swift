@@ -55,8 +55,8 @@ private struct OwnerTabView: View {
             HorsesView()
                 .tabItem { Label("Horses", systemImage: "figure.equestrian.sports") }
                 .tag(1)
-            CalendarView()
-                .tabItem { Label("Calendar", systemImage: "calendar") }
+            FeedView()
+                .tabItem { Label("Community", systemImage: "person.2.fill") }
                 .tag(2)
             ConversationsView()
                 .tabItem { Label("Messages", systemImage: "message.fill") }
@@ -85,8 +85,8 @@ private struct TrainerTabView: View {
             TrainerHorsesView()
                 .tabItem { Label("Horses", systemImage: "figure.equestrian.sports") }
                 .tag(1)
-            CalendarView()
-                .tabItem { Label("Schedule", systemImage: "calendar") }
+            FeedView()
+                .tabItem { Label("Community", systemImage: "person.2.fill") }
                 .tag(2)
             ConversationsView()
                 .tabItem { Label("Messages", systemImage: "message.fill") }
@@ -195,8 +195,8 @@ private struct EQMoreView: View {
                 MoreSimpleRow(icon: "tag", title: "Marketplace")
             }.buttonStyle(.eqPress)
             EQDivider().padding(.leading, EQSpacing.md)
-            NavigationLink { FeedView() } label: {
-                MoreSimpleRow(icon: "person.2", title: "Community Feed")
+            NavigationLink { CalendarView() } label: {
+                MoreSimpleRow(icon: "calendar", title: "Calendar")
             }.buttonStyle(.eqPress)
         }
         .background(Color.white)
