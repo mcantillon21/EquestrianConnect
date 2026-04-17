@@ -50,6 +50,12 @@ def collect_xcassets():
 sources = collect_sources()
 xcassets = collect_xcassets()
 
+# External (non-EquestrianConnect/) files wired into the project.
+XCCONFIG_REL = "Config/Supabase.xcconfig"
+XCCONFIG_ABS = os.path.join(BASE, XCCONFIG_REL)
+if not os.path.exists(XCCONFIG_ABS):
+    print(f"⚠️  {XCCONFIG_REL} is missing — copy Config/Supabase.xcconfig.example and fill it in before building.")
+
 # Generate UUIDs for everything
 PROJECT_ID     = fresh_id()
 TARGET_ID      = fresh_id()
@@ -71,6 +77,7 @@ file_refs = {}   # rel_path -> fileRef UUID
 build_files = {} # rel_path -> buildFile UUID (swift only)
 asset_ref_id = fresh_id()
 asset_build_file_id = fresh_id()
+xcconfig_ref_id = fresh_id()
 
 for s in sources:
     file_refs[s] = fresh_id()
@@ -144,6 +151,8 @@ for s, fid in file_refs.items():
     emit(f'{fid} /* {fname} */ = {{isa = PBXFileReference; lastKnownFileType = {ltype}; path = "{fname}"; sourceTree = "<group>"; }};', 3)
 # xcassets
 emit(f'{asset_ref_id} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; }};', 3)
+# xcconfig (lives at repo root, outside EquestrianConnect/)
+emit(f'{xcconfig_ref_id} /* Supabase.xcconfig */ = {{isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Supabase.xcconfig; path = "{XCCONFIG_REL}"; sourceTree = SOURCE_ROOT; }};', 3)
 # Product
 emit(f'{PRODUCT_REF_ID} /* EquestrianConnect.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EquestrianConnect.app; sourceTree = BUILT_PRODUCTS_DIR; }};', 3)
 emit("/* End PBXFileReference section */", 2)
@@ -217,6 +226,7 @@ for name, subtree in sorted(tree.items(), key=lambda x: (x[1] is None, x[0])):
             emit(f"{fid} /* {name} */,", 5)
 # xcassets
 emit(f"{asset_ref_id} /* Assets.xcassets */,", 5)
+emit(f"{xcconfig_ref_id} /* Supabase.xcconfig */,", 5)
 emit(f"{PRODUCTS_ID} /* Products */,", 5)
 emit(");", 4)
 emit('name = EquestrianConnect;', 4)
@@ -367,6 +377,8 @@ release_extra = {
 def emit_build_config(config_id, name, extra_settings, is_project=False):
     emit(f"{config_id} /* {name} */ = {{", 3)
     emit("isa = XCBuildConfiguration;", 4)
+    if not is_project:
+        emit(f"baseConfigurationReference = {xcconfig_ref_id} /* Supabase.xcconfig */;", 4)
     emit("buildSettings = {", 4)
     if is_project:
         # Project-level settings

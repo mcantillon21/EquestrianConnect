@@ -1,0 +1,5 @@
+// Copy this file to Config/Supabase.xcconfig and fill in your values.
+// Config/Supabase.xcconfig is gitignored.
+
+SUPABASE_PROJECT_REF = your_project_ref_here
+SUPABASE_ANON_KEY = your_anon_key_here

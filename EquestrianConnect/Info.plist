@@ -20,6 +20,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>SupabaseProjectRef</key>
+	<string>$(SUPABASE_PROJECT_REF)</string>
+	<key>SupabaseAnonKey</key>
+	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Equestrian Connect uses the camera to capture photos and videos of your horses.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -48,15 +48,28 @@ struct EmptyResponse: Decodable {}
 final class SupabaseClient {
     static let shared = SupabaseClient()
 
-    private let projectRef = "zoyeruhsegqhyhehfyje"
-    private let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpveWVydWhzZWdxaHloZWhmeWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxODgxOTAsImV4cCI6MjA5MDc2NDE5MH0.mYNzu_uj_0341VvCVegkLixTatdkWOWll2p5vquojU0"
+    private let projectRef: String
+    private let anonKey: String
 
     private var baseURL: String { "https://\(projectRef).supabase.co" }
     private var restURL: String { "\(baseURL)/rest/v1" }
     private var authURL: String { "\(baseURL)/auth/v1" }
     private var storageURL: String { "\(baseURL)/storage/v1" }
 
-    private init() {}
+    private init() {
+        let info = Bundle.main.infoDictionary ?? [:]
+        let ref = (info["SupabaseProjectRef"] as? String) ?? ""
+        let key = (info["SupabaseAnonKey"] as? String) ?? ""
+        if ref.isEmpty || ref.hasPrefix("$(") || key.isEmpty || key.hasPrefix("$(") {
+            fatalError("""
+            Missing Supabase config. Copy Config/Supabase.xcconfig.example to \
+            Config/Supabase.xcconfig, fill in SUPABASE_PROJECT_REF and \
+            SUPABASE_ANON_KEY, then rebuild.
+            """)
+        }
+        self.projectRef = ref
+        self.anonKey = key
+    }
 
     // MARK: - Token Management
 
@@ -313,12 +326,31 @@ final class SupabaseClient {
     // MARK: - Profile (current user)
 
     func getProfile() async throws -> User {
-        guard let token = accessToken else { throw SupabaseError.unauthorized }
+        guard accessToken != nil else { throw SupabaseError.unauthorized }
         let authUser = try await getAuthUser()
         let qi = [URLQueryItem(name: "id", value: "eq.\(authUser.id)")]
         let results: [User] = try await restRequest(method: "GET", path: "profiles", queryItems: qi)
         guard let profile = results.first else { throw SupabaseError.notFound }
         return profile
+    }
+
+    /// Fetch the current user's profile, or create one if none exists yet.
+    /// Handles the new-signup case where no Supabase DB trigger auto-creates `profiles` rows.
+    func fetchOrCreateProfile() async throws -> User {
+        guard accessToken != nil else { throw SupabaseError.unauthorized }
+        let authUser = try await getAuthUser()
+        let qi = [URLQueryItem(name: "id", value: "eq.\(authUser.id)")]
+        let results: [User] = try await restRequest(method: "GET", path: "profiles", queryItems: qi)
+        if let existing = results.first { return existing }
+        let seed = User(
+            id: authUser.id,
+            email: authUser.email ?? "",
+            full_name: nil,
+            user_type: nil,
+            profile_image: nil,
+            created_date: nil
+        )
+        return try await create(table: "profiles", data: seed)
     }
 
     func updateProfile(_ user: User) async throws -> User {

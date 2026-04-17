@@ -25,3 +25,6 @@ build/
 
 # CocoaPods
 Pods/
+
+# Local config (creds) — copy Config/Supabase.xcconfig.example to set up
+Config/Supabase.xcconfig

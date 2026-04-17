@@ -42,7 +42,7 @@ final class AuthManager {
             if client.refreshToken != nil {
                 _ = try? await client.refreshSession()
             }
-            let profile = try await client.getProfile()
+            let profile = try await client.fetchOrCreateProfile()
             await MainActor.run { user = profile; isLoading = false }
         } catch {
             client.signOut()
@@ -74,11 +74,22 @@ final class AuthManager {
             let response = try await client.verifyOtp(email: email, token: code)
             if let at = response.access_token { client.accessToken = at }
             if let rt = response.refresh_token { client.refreshToken = rt }
-            await MainActor.run { pendingVerificationEmail = nil }
 
-            // Fetch the profile
-            let profile = try await client.getProfile()
-            await MainActor.run { user = profile; isLoading = false }
+            // Fetch or create the profile row. For brand-new signups with no DB
+            // trigger, this inserts a minimal row so the user isn't stranded.
+            do {
+                let profile = try await client.fetchOrCreateProfile()
+                await MainActor.run {
+                    pendingVerificationEmail = nil
+                    user = profile
+                    isLoading = false
+                }
+            } catch {
+                // Profile step failed after tokens saved — wipe so user isn't
+                // stuck in a zombie state on next launch.
+                client.signOut()
+                throw error
+            }
         } catch {
             await MainActor.run { self.error = error.localizedDescription; isLoading = false }
             throw error
