@@ -1,0 +1,63 @@
+<!--
+  EquestrianConnect — Magic Link email template
+  Paste this into Supabase → Authentication → Email Templates → Magic Link.
+  Suppresses the localhost redirect entirely; shows only the 6-digit code.
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Your sign-in code</title>
+  </head>
+  <body style="margin:0;padding:0;background:#F5F1EA;font-family:-apple-system,BlinkMacSystemFont,'Avenir Next','Helvetica Neue',Helvetica,Arial,sans-serif;color:#1A1510;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F5F1EA;padding:40px 20px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#FAF7F3;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(26,21,16,0.06);">
+
+            <!-- Header -->
+            <tr>
+              <td style="background:linear-gradient(135deg,#5D3F2D 0%,#876148 100%);padding:32px 32px 28px;">
+                <div style="color:#D8B690;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;">Equestrian Connect</div>
+                <div style="color:#ffffff;font-size:24px;font-weight:700;margin-top:6px;letter-spacing:-0.5px;">Your sign-in code</div>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:36px 32px 12px;">
+                <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#634F4E;">
+                  Enter this 6-digit code in the app to sign in. It expires in 60 minutes.
+                </p>
+
+                <!-- Code -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="background:#1A1510;border-radius:12px;padding:24px;">
+                      <div style="color:#ffffff;font-size:36px;font-weight:700;letter-spacing:10px;font-family:'SF Mono',Menlo,Consolas,monospace;">{{ .Token }}</div>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:28px 0 0;font-size:13px;line-height:1.55;color:#634F4E;">
+                  Didn't ask for this code? You can safely ignore this email — no one can sign in without it.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding:24px 32px 28px;border-top:1px solid #DBD4CA;">
+                <p style="margin:0;font-size:12px;color:#634F4E;">
+                  Sent to <span style="color:#1A1510;">{{ .Email }}</span>
+                </p>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -36,6 +36,7 @@ struct LoginView: View {
                         Text("Sign in with your email")
                             .font(.subheadline)
                             .foregroundStyle(Color.eqSandyBrown.opacity(0.9))
+                            .accessibilityHint("You'll receive a 6-digit code to enter on the next screen")
                     }
                     .padding(.bottom, EQSpacing.xxl)
 
@@ -54,13 +55,13 @@ struct LoginView: View {
                         )
                         .textInputAutocapitalization(.never)
 
-                        Text("We'll send you a magic link to sign in — no password needed.")
+                        Text("We'll email you a 6-digit code to sign in — no password needed.")
                             .font(.eqFont(13, weight: .regular))
                             .foregroundStyle(Color.eqMuted)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         EQPrimaryButton(
-                            title: "Send Magic Link",
+                            title: "Email Me a Code",
                             isLoading: isLoading
                         ) {
                             submit()
