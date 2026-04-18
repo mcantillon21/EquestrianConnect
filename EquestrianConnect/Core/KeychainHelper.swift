@@ -5,7 +5,7 @@ final class KeychainHelper {
     static let shared = KeychainHelper()
     private init() {}
 
-    private let service = "com.equestrianconnect.app"
+    private let service = "com.equestrianconnect.ai"
 
     func set(key: String, value: String) {
         let data = Data(value.utf8)

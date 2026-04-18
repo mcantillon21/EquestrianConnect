@@ -54,6 +54,17 @@ final class AuthManager {
 
     func sendMagicLink(email: String) async throws {
         await MainActor.run { isLoading = true; error = nil }
+
+        // App Review bypass: skip Supabase for the reviewer email so we
+        // don't burn OTP quota or spam an unowned inbox.
+        if email.lowercased() == "apple-review@equestrianconnect.ai" {
+            await MainActor.run {
+                pendingVerificationEmail = email
+                isLoading = false
+            }
+            return
+        }
+
         do {
             try await client.signInWithOtp(email: email)
             await MainActor.run {
@@ -70,6 +81,26 @@ final class AuthManager {
 
     func verifyOTP(email: String, code: String) async throws {
         await MainActor.run { isLoading = true; error = nil }
+
+        // App Review bypass: a hardcoded reviewer email + code combo that
+        // skips Supabase entirely and drops the reviewer into a populated
+        // demo session. Scoped to one specific email so real users can't
+        // trigger it even in production.
+        if email.lowercased() == "apple-review@equestrianconnect.ai" && code == "000000" {
+            await MainActor.run {
+                isDemoMode = true
+                pendingVerificationEmail = nil
+                user = User(
+                    id: "apple-review-user",
+                    email: email,
+                    full_name: "App Review",
+                    user_type: "owner"
+                )
+                isLoading = false
+            }
+            return
+        }
+
         do {
             let response = try await client.verifyOtp(email: email, token: code)
             if let at = response.access_token { client.accessToken = at }

@@ -24,6 +24,6 @@ git push -u origin main
 
 - iOS 17+, SwiftUI, `@Observable` macro
 - Run `python3 generate_project.py` whenever Swift files are added or removed
-- Build target: `com.equestrianconnect.app`
+- Build target: `com.equestrianconnect.ai`
 - Simulator device for screenshots: iPhone 17
 - All network calls must run off the main thread; only `@Observable` property mutations use `await MainActor.run { }`
