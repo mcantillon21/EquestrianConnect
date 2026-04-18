@@ -98,7 +98,11 @@ struct OTPVerificationView: View {
             }
         }
         .onAppear {
-            fieldFocused = true
+            // Slight delay — focus set too early can be dropped before the
+            // field is in the view hierarchy, which suppresses QuickType autofill.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                fieldFocused = true
+            }
             startResendCooldown(seconds: 30)
         }
         .onChange(of: code) { _, newVal in
@@ -110,19 +114,16 @@ struct OTPVerificationView: View {
     }
 
     // MARK: - Digit boxes
+    //
+    // Layered approach: a full-size, transparent-text TextField sits on top of
+    // the visible DigitBoxes. iOS QuickType needs the field to be "real"
+    // (present in the view hierarchy, non-zero-size, not hidden) to offer
+    // one-time-code autofill from Mail. Making the text/cursor clear lets us
+    // render our own styled boxes underneath while the field still receives
+    // keyboard input and autofill suggestions.
 
     private var digitBoxes: some View {
         ZStack {
-            // Hidden text field that receives keyboard input
-            TextField("", text: $code)
-                .keyboardType(.numberPad)
-                .textContentType(.oneTimeCode)
-                .focused($fieldFocused)
-                .frame(width: 1, height: 1)
-                .opacity(0.011)
-                .allowsHitTesting(false)
-
-            // Visible digit display
             HStack(spacing: 10) {
                 ForEach(0..<codeLength, id: \.self) { index in
                     DigitBox(
@@ -131,7 +132,18 @@ struct OTPVerificationView: View {
                     )
                 }
             }
+
+            TextField("", text: $code)
+                .keyboardType(.numberPad)
+                .textContentType(.oneTimeCode)
+                .focused($fieldFocused)
+                .foregroundStyle(.clear)
+                .tint(.clear)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
         }
+        .frame(height: 54)
     }
 
     private func digit(at index: Int) -> String {
