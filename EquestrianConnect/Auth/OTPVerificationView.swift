@@ -235,23 +235,27 @@ private struct DigitBox: View {
 
     var body: some View {
         ZStack {
+            // Base box — always present, thin neutral border
             RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
                 .fill(Color.white)
                 .overlay(
                     RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
-                        .strokeBorder(
-                            isActive ? Color.eqSaddleBrown : Color.eqTaupe.opacity(0.4),
-                            lineWidth: isActive ? 2 : 1
-                        )
+                        .strokeBorder(Color.eqTaupe.opacity(0.55), lineWidth: 1)
                 )
-                .shadow(color: Color.eqInk.opacity(isActive ? 0.08 : 0.03), radius: 6, x: 0, y: 2)
+
+            // Focus ring — only on the active box, slightly outset
+            if isActive {
+                RoundedRectangle(cornerRadius: EQRadius.sm + 1, style: .continuous)
+                    .strokeBorder(Color.eqSaddleBrown, lineWidth: 2.5)
+                    .frame(width: 46, height: 56)
+                    .transition(.opacity)
+            }
 
             if digit.isEmpty && isActive {
                 // Blinking cursor
                 Rectangle()
                     .fill(Color.eqSaddleBrown)
                     .frame(width: 2, height: 24)
-                    .opacity(isActive ? 1 : 0)
                     .animation(.easeInOut(duration: 0.6).repeatForever(), value: isActive)
             } else {
                 Text(digit)
