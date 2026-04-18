@@ -39,7 +39,7 @@ def collect_sources():
         if ".xcassets" in root:
             continue
         for f in files:
-            if f.endswith((".swift", ".plist")):
+            if f.endswith((".swift", ".plist", ".csv")):
                 rel = os.path.relpath(os.path.join(root, f), APP_DIR)
                 sources.append(rel)
     return sorted(sources)
@@ -79,10 +79,14 @@ asset_ref_id = fresh_id()
 asset_build_file_id = fresh_id()
 xcconfig_ref_id = fresh_id()
 
+resource_build_files = {}  # rel_path -> buildFile UUID (non-swift resources like .csv)
+
 for s in sources:
     file_refs[s] = fresh_id()
     if s.endswith(".swift"):
         build_files[s] = fresh_id()
+    elif s.endswith(".csv"):
+        resource_build_files[s] = fresh_id()
 
 # Group structure
 def make_group_tree(sources):
@@ -132,6 +136,11 @@ for s, bid in build_files.items():
     emit(f"{bid} /* {fname} in Sources */ = {{isa = PBXBuildFile; fileRef = {fref} /* {fname} */; }};", 3)
 # xcassets
 emit(f"{asset_build_file_id} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {asset_ref_id} /* Assets.xcassets */; }};", 3)
+# CSV and other bundled resources
+for s, bid in resource_build_files.items():
+    fname = os.path.basename(s)
+    fref = file_refs[s]
+    emit(f"{bid} /* {fname} in Resources */ = {{isa = PBXBuildFile; fileRef = {fref} /* {fname} */; }};", 3)
 emit("/* End PBXBuildFile section */", 2)
 emit("")
 
@@ -145,6 +154,9 @@ for s, fid in file_refs.items():
     elif fname == "Info.plist":
         ltype = "text.plist.xml"
         etype = "text.plist.xml"
+    elif fname.endswith(".csv"):
+        ltype = "text.csv"
+        etype = "text.csv"
     else:
         ltype = "text"
         etype = "text"
@@ -314,6 +326,9 @@ emit("isa = PBXResourcesBuildPhase;", 4)
 emit("buildActionMask = 2147483647;", 4)
 emit("files = (", 4)
 emit(f"{asset_build_file_id} /* Assets.xcassets in Resources */,", 5)
+for s, bid in sorted(resource_build_files.items()):
+    fname = os.path.basename(s)
+    emit(f"{bid} /* {fname} in Resources */,", 5)
 emit(");", 4)
 emit("runOnlyForDeploymentPostprocessing = 0;", 4)
 emit("};", 3)

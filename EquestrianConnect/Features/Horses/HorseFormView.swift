@@ -24,6 +24,10 @@ struct HorseFormView: View {
     @State private var isSaving = false
     @State private var error: String?
 
+    @State private var registrySearch = ""
+    @State private var registryMatches: [HorseRegistryEntry] = []
+    @State private var registryPrefilled = false
+
     private var isEditing: Bool { editingHorse != nil }
     private var title: String { isEditing ? "Edit Horse" : "Add Horse" }
 
@@ -50,6 +54,10 @@ struct HorseFormView: View {
                         }
 
                         VStack(spacing: EQSpacing.md) {
+                            if !isEditing {
+                                registrySection
+                            }
+
                             EQTextField(label: "Name *", placeholder: "e.g. Thunderbolt", text: $name)
                             EQTextField(label: "Barn Name / Nickname", placeholder: "e.g. Thunder", text: $barnName)
 
@@ -123,8 +131,92 @@ struct HorseFormView: View {
                         .foregroundStyle(.white)
                 }
             }
-            .onAppear { prefill() }
+            .onAppear {
+                prefill()
+                HorseRegistry.shared.loadIfNeeded()
+            }
         }
+    }
+
+    // MARK: - Registry autocomplete
+
+    private var registrySection: some View {
+        VStack(alignment: .leading, spacing: EQSpacing.xs) {
+            EQTextField(
+                label: "Search Registry",
+                placeholder: "NCHA — find by name",
+                text: $registrySearch,
+                icon: "magnifyingglass"
+            )
+            .textInputAutocapitalization(.words)
+            .onChange(of: registrySearch) { _, q in
+                registryMatches = HorseRegistry.shared.search(q)
+            }
+
+            if registryPrefilled {
+                HStack(spacing: EQSpacing.xs) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color.eqSaddleBrown)
+                    Text("Prefilled from NCHA registry — edit anything below.")
+                        .font(.caption)
+                        .foregroundStyle(Color.eqMuted)
+                }
+                .padding(.horizontal, EQSpacing.xs)
+            }
+
+            if !registryMatches.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach(Array(registryMatches.enumerated()), id: \.element.id) { idx, entry in
+                        Button {
+                            applyRegistry(entry)
+                        } label: {
+                            HStack(alignment: .center, spacing: EQSpacing.sm) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(entry.name)
+                                        .font(.eqFont(15, weight: .semibold))
+                                        .foregroundStyle(Color.eqInk)
+                                        .lineLimit(1)
+                                    Text(entry.subtitle)
+                                        .font(.eqFont(12))
+                                        .foregroundStyle(Color.eqMuted)
+                                        .lineLimit(1)
+                                }
+                                Spacer()
+                                Image(systemName: "arrow.up.left")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.eqTaupe)
+                            }
+                            .padding(.horizontal, EQSpacing.md)
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if idx != registryMatches.count - 1 {
+                            EQDivider()
+                        }
+                    }
+                }
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                        .strokeBorder(Color.eqLightTan, lineWidth: 1)
+                )
+            }
+        }
+    }
+
+    private func applyRegistry(_ entry: HorseRegistryEntry) {
+        name = entry.name.capitalized
+        gender = entry.genderValue
+        registrationNumber = entry.nchaNumber
+        if let iso = entry.dateOfBirthISO, let dob = iso.toDate() {
+            dateOfBirth = dob
+            hasDOB = true
+        }
+        registrySearch = ""
+        registryMatches = []
+        registryPrefilled = true
     }
 
     private func prefill() {
