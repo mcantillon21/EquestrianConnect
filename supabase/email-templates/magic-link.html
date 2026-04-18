@@ -27,7 +27,11 @@
             <!-- Body -->
             <tr>
               <td style="padding:36px 32px 12px;">
-                <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#634F4E;">
+                <!-- Plain-text trigger phrase so iOS Mail detects and offers autofill -->
+                <p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#1A1510;">
+                  Your Equestrian Connect verification code is <strong>{{ .Token }}</strong>
+                </p>
+                <p style="margin:0 0 24px;font-size:13px;line-height:1.55;color:#634F4E;">
                   Enter this 6-digit code in the app to sign in. It expires in 60 minutes.
                 </p>
 
