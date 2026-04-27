@@ -110,9 +110,9 @@ final class DashboardViewModel {
             cal.date(byAdding: .hour, value: -hours, to: now)!.iso8601DateString
         }
 
-        let imgMidnight = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&fit=crop"
-        let imgArrow = "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=400&fit=crop"
-        let imgStorm = "https://images.unsplash.com/photo-1564760055775-d63b17a55c44?w=400&fit=crop"
+        let imgMidnight = "https://images.unsplash.com/photo-1670212433014-b2435aca06a4?w=400&fit=crop"
+        let imgArrow = "https://images.unsplash.com/photo-1517326451550-8612522c096e?w=400&fit=crop"
+        let imgStorm = "https://images.unsplash.com/photo-1641226469021-f81abb75108c?w=400&fit=crop"
         let imgRuby = "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=400&fit=crop"
 
         if isTrainer {
