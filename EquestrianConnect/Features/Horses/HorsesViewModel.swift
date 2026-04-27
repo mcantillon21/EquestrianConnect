@@ -47,10 +47,10 @@ final class HorsesViewModel {
 
     @MainActor
     private func loadSimulatorMock(isTrainer: Bool) {
-        let imgMidnight = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Applebite-Gentlemen.jpg/400px-Applebite-Gentlemen.jpg"
-        let imgArrow = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Mare_and_foal_%28Kvetina-Marie%29.jpg/400px-Mare_and_foal_%28Kvetina-Marie%29.jpg"
-        let imgStorm = "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/WCLV07m.JPG/400px-WCLV07m.JPG"
-        let imgRuby = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Halterstandingshotarabianone.jpg/400px-Halterstandingshotarabianone.jpg"
+        let imgMidnight = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&fit=crop"
+        let imgArrow = "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=400&fit=crop"
+        let imgStorm = "https://images.unsplash.com/photo-1564760055775-d63b17a55c44?w=400&fit=crop"
+        let imgRuby = "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=400&fit=crop"
         horses = [
             Horse(id: "h1", name: "Midnight Star", barn_name: "Midnight",
                   breed: "Thoroughbred", color: "Black", date_of_birth: "2018-04-15",
