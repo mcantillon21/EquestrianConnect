@@ -39,7 +39,7 @@ struct Horse: Codable, Identifiable, Hashable {
 
 extension Horse {
     static let disciplines = [
-        "Dressage", "Jumping", "Eventing", "Western Pleasure", "Reining",
+        "Cutting", "Cow Horse", "Dressage", "Jumping", "Eventing", "Western Pleasure", "Reining",
         "Trail", "Endurance", "Barrel Racing", "Polo", "Hunter", "Other"
     ]
     static let genders: [(value: String, label: String)] = [
