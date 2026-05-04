@@ -112,7 +112,7 @@ final class SupabaseClient {
 
     // MARK: - Auth: Magic Link (OTP)
 
-    /// Send a magic link / OTP to the user's email
+    /// Send an OTP to the user's email (initial send).
     func signInWithOtp(email: String) async throws {
         var req = URLRequest(url: URL(string: "\(authURL)/otp")!)
         req.httpMethod = "POST"
@@ -125,7 +125,28 @@ final class SupabaseClient {
             let msg = Self.extractErrorMessage(from: data)
             throw SupabaseError.httpError(
                 statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0,
-                message: msg ?? "Failed to send magic link"
+                message: msg ?? "Failed to send code"
+            )
+        }
+    }
+
+    /// Resend an OTP using Supabase's dedicated resend endpoint.
+    /// This is different from signInWithOtp — calling /otp again for the same email
+    /// is silently deduplicated by Supabase; /resend always generates a fresh code.
+    func resendOtp(email: String) async throws {
+        struct Body: Encodable { let type: String; let email: String }
+        var req = URLRequest(url: URL(string: "\(authURL)/resend")!)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(anonKey, forHTTPHeaderField: "apikey")
+        req.httpBody = try JSONEncoder().encode(Body(type: "email", email: email))
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            let msg = Self.extractErrorMessage(from: data)
+            throw SupabaseError.httpError(
+                statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0,
+                message: msg ?? "Failed to resend code"
             )
         }
     }

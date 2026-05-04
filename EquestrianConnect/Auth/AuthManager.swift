@@ -128,7 +128,7 @@ final class AuthManager {
     }
 
     func resendOTP(email: String) async throws {
-        try await client.signInWithOtp(email: email)
+        try await client.resendOtp(email: email)
     }
 
     // MARK: Role Selection
