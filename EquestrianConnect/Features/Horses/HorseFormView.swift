@@ -17,6 +17,7 @@ struct HorseFormView: View {
     @State private var hasDOB = false
     @State private var registrationNumber = ""
     @State private var trainerEmail = ""
+    @State private var ownerEmail = ""
     @State private var photoItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
     @State private var uploadedImageURL: String? = nil
@@ -106,6 +107,14 @@ struct HorseFormView: View {
                                     label: "Trainer Email",
                                     placeholder: "trainer@barn.com",
                                     text: $trainerEmail,
+                                    keyboard: .emailAddress
+                                )
+                                .textInputAutocapitalization(.never)
+                            } else if auth.user?.isTrainer == true {
+                                EQTextField(
+                                    label: "Owner Email",
+                                    placeholder: "owner@barn.com",
+                                    text: $ownerEmail,
                                     keyboard: .emailAddress
                                 )
                                 .textInputAutocapitalization(.never)
@@ -229,6 +238,7 @@ struct HorseFormView: View {
         discipline = h.discipline ?? ""
         registrationNumber = h.registration_number ?? ""
         trainerEmail = h.trainer_id ?? ""
+        ownerEmail = h.owner_id ?? ""
         uploadedImageURL = h.profile_image
         if let dob = h.date_of_birth?.toDate() {
             dateOfBirth = dob
@@ -267,8 +277,8 @@ struct HorseFormView: View {
             gender: gender.isEmpty ? nil : gender,
             registration_number: registrationNumber.isEmpty ? nil : registrationNumber,
             discipline: discipline.isEmpty ? nil : discipline,
-            owner_id: editingHorse?.owner_id ?? auth.user?.id,
-            trainer_id: trainerEmail.isEmpty ? nil : trainerEmail,
+            owner_id: editingHorse?.owner_id ?? (auth.user?.isTrainer == true ? (ownerEmail.isEmpty ? nil : ownerEmail) : auth.user?.id),
+            trainer_id: editingHorse?.trainer_id ?? (auth.user?.isTrainer == true ? auth.user?.id : (trainerEmail.isEmpty ? nil : trainerEmail)),
             profile_image: uploadedImageURL ?? editingHorse?.profile_image,
             total_earnings: editingHorse?.total_earnings
         )
