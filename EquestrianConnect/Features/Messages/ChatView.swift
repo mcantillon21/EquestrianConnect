@@ -36,7 +36,7 @@ struct ChatView: View {
                 }
             }
         }
-        .navigationTitle(String(otherId.prefix(8)))
+        .navigationTitle(conversation.displayName(currentUserId: myId))
         .navigationBarTitleDisplayMode(.inline)
         .eqNavAppearance()
         .task {

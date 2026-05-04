@@ -314,12 +314,7 @@ private struct DashHorseCard: View {
 
             // Gradient scrim + text overlay
             VStack(alignment: .leading, spacing: 3) {
-                if showOwner, let owner = horse.owner_id {
-                    Text(String(owner.prefix(8)))
-                        .font(.eqFont(10, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.72))
-                        .lineLimit(1)
-                } else if let discipline = horse.discipline {
+                if let discipline = horse.discipline {
                     Text(discipline.uppercased())
                         .font(.eqFont(9, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.65))
@@ -432,8 +427,7 @@ private struct DashConvCard: View {
     let currentUserId: String
 
     private var displayName: String {
-        let other = conv.otherParticipant(currentUserId: currentUserId)
-        return String(other.prefix(8))
+        conv.displayName(currentUserId: currentUserId)
     }
 
     var body: some View {

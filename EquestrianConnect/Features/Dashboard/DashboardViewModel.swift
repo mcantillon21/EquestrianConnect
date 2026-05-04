@@ -45,10 +45,19 @@ final class DashboardViewModel {
                 guard let d = $0.start_date.toDate() else { return false }
                 return d >= now
             }
+            var namedConvs = c
+            let otherIds = Array(Set(c.map { $0.otherParticipant(currentUserId: userId) }.filter { !$0.isEmpty && $0 != userId }))
+            if !otherIds.isEmpty, let profiles = try? await client.getProfiles(ids: otherIds) {
+                let nameMap = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0.displayName) })
+                for i in namedConvs.indices {
+                    let other = namedConvs[i].otherParticipant(currentUserId: userId)
+                    namedConvs[i].other_name = nameMap[other]
+                }
+            }
             await MainActor.run {
                 horses = h
                 upcomingEvents = upcoming
-                recentConversations = c
+                recentConversations = namedConvs
                 isLoading = false
             }
         } catch {
@@ -197,41 +206,33 @@ final class DashboardViewModel {
         ]
 
         if isTrainer {
-            recentConversations = [
-                Conversation(id: "c1",
-                             participants: ["preview-trainer", "jordan-id"],
-                             horse_id: "h1", last_message: "How did Midnight do in her lesson?",
-                             last_message_date: past(1),
-                             unread_count: 2, created_date: nil),
-                Conversation(id: "c2",
-                             participants: ["preview-trainer", "sarah-id"],
-                             horse_id: "h2", last_message: "Arrow is ready for the show!",
-                             last_message_date: past(5),
-                             unread_count: 1, created_date: nil),
-                Conversation(id: "c3",
-                             participants: ["preview-trainer", "mike-id"],
-                             horse_id: "h3", last_message: "Can we reschedule Tuesday's session?",
-                             last_message_date: past(24),
-                             unread_count: 0, created_date: nil),
-            ]
+            var c1 = Conversation(id: "c1", participants: ["preview-trainer", "jordan-id"],
+                                  horse_id: "h1", last_message: "How did Midnight do in her lesson?",
+                                  last_message_date: past(1), unread_count: 2, created_date: nil)
+            c1.other_name = "Jordan Williams"
+            var c2 = Conversation(id: "c2", participants: ["preview-trainer", "sarah-id"],
+                                  horse_id: "h2", last_message: "Arrow is ready for the show!",
+                                  last_message_date: past(5), unread_count: 1, created_date: nil)
+            c2.other_name = "Sarah Chen"
+            var c3 = Conversation(id: "c3", participants: ["preview-trainer", "mike-id"],
+                                  horse_id: "h3", last_message: "Can we reschedule Tuesday's session?",
+                                  last_message_date: past(24), unread_count: 0, created_date: nil)
+            c3.other_name = "Mike Thompson"
+            recentConversations = [c1, c2, c3]
         } else {
-            recentConversations = [
-                Conversation(id: "c1",
-                             participants: ["preview-owner", "trainer-id"],
-                             horse_id: nil, last_message: "See you Thursday at 9am!",
-                             last_message_date: past(2),
-                             unread_count: 2, created_date: nil),
-                Conversation(id: "c2",
-                             participants: ["preview-owner", "vet-id"],
-                             horse_id: "h3", last_message: "Storm's bloodwork came back clean",
-                             last_message_date: past(20),
-                             unread_count: 0, created_date: nil),
-                Conversation(id: "c3",
-                             participants: ["preview-owner", "barn-id"],
-                             horse_id: nil, last_message: "Hay delivery confirmed for Friday",
-                             last_message_date: past(48),
-                             unread_count: 0, created_date: nil),
-            ]
+            var c1 = Conversation(id: "c1", participants: ["preview-owner", "trainer-id"],
+                                  horse_id: nil, last_message: "See you Thursday at 9am!",
+                                  last_message_date: past(2), unread_count: 2, created_date: nil)
+            c1.other_name = "Sarah Johnson"
+            var c2 = Conversation(id: "c2", participants: ["preview-owner", "vet-id"],
+                                  horse_id: "h3", last_message: "Storm's bloodwork came back clean",
+                                  last_message_date: past(20), unread_count: 0, created_date: nil)
+            c2.other_name = "Dr. Miller"
+            var c3 = Conversation(id: "c3", participants: ["preview-owner", "barn-id"],
+                                  horse_id: nil, last_message: "Hay delivery confirmed for Friday",
+                                  last_message_date: past(48), unread_count: 0, created_date: nil)
+            c3.other_name = "Mike Thompson"
+            recentConversations = [c1, c2, c3]
         }
 
         isLoading = false

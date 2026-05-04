@@ -59,8 +59,8 @@ struct ConversationsView: View {
             .navigationDestination(item: $selectedConv) { conv in
                 ChatView(conversation: conv, vm: vm)
             }
-            .task { await vm.loadConversations() }
-            .refreshable { await vm.loadConversations() }
+            .task { await vm.loadConversations(currentUserId: auth.user?.id ?? "") }
+            .refreshable { await vm.loadConversations(currentUserId: auth.user?.id ?? "") }
         }
     }
 }
@@ -74,13 +74,13 @@ private struct ConversationRow: View {
     var body: some View {
         HStack(spacing: EQSpacing.md) {
             InitialsAvatar(
-                text: conv.otherParticipant(currentUserId: currentUserId),
+                text: conv.displayName(currentUserId: currentUserId),
                 size: 50
             )
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(conv.otherParticipant(currentUserId: currentUserId))
+                    Text(conv.displayName(currentUserId: currentUserId))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.eqDarkBrown)
                     Spacer()
@@ -171,9 +171,11 @@ private struct NewConversationView: View {
         isCreating = true
         Task {
             do {
-                let conv = try await vm.startConversation(with: email, currentUserId: me.id)
+                let conv = try await vm.startConversation(withEmail: email, currentUserId: me.id)
                 dismiss()
                 onCreated(conv)
+            } catch SupabaseError.notFound {
+                self.error = "No user found with that email."
             } catch {
                 self.error = error.localizedDescription
             }

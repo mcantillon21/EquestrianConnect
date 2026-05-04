@@ -7,6 +7,7 @@ final class MessagesViewModel {
     var messages: [String: [Message]] = [:]  // keyed by conversation_id
     var isLoading = false
     var error: String?
+    var currentUserId: String = ""
 
     var totalUnreadCount: Int {
         conversations.reduce(0) { $0 + ($1.unread_count ?? 0) }
@@ -16,7 +17,8 @@ final class MessagesViewModel {
     private var pollingTask: Task<Void, Never>?
 
     @MainActor
-    func loadConversations() async {
+    func loadConversations(currentUserId: String = "") async {
+        if !currentUserId.isEmpty { self.currentUserId = currentUserId }
         #if targetEnvironment(simulator)
         loadSimulatorMock()
         return
@@ -33,10 +35,28 @@ final class MessagesViewModel {
                 order: "last_message_date.desc",
                 limit: 50
             )
+            await resolveParticipantNames()
         } catch {
             self.error = error.localizedDescription
         }
         isLoading = false
+    }
+
+    private func resolveParticipantNames() async {
+        let uid = currentUserId
+        guard !uid.isEmpty else { return }
+        let otherIds = Array(Set(conversations.map { $0.otherParticipant(currentUserId: uid) }.filter { !$0.isEmpty && $0 != uid }))
+        guard !otherIds.isEmpty else { return }
+        guard let profiles = try? await client.getProfiles(ids: otherIds) else { return }
+        let nameMap = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0.displayName) })
+        await MainActor.run {
+            for i in conversations.indices {
+                let other = conversations[i].otherParticipant(currentUserId: uid)
+                if let name = nameMap[other] {
+                    conversations[i].other_name = name
+                }
+            }
+        }
     }
 
     @MainActor
@@ -160,20 +180,35 @@ final class MessagesViewModel {
 
     @MainActor
     func startConversation(with otherId: String, currentUserId: String, horseId: String? = nil) async throws -> Conversation {
-        // Check if conversation already exists
+        if !currentUserId.isEmpty { self.currentUserId = currentUserId }
+        // Return existing conversation if one already exists
         if let existing = conversations.first(where: {
             $0.participants.contains(currentUserId) && $0.participants.contains(otherId)
         }) {
             return existing
         }
-        let conv = Conversation(
+        var conv = Conversation(
             id: UUID().uuidString,
             participants: [currentUserId, otherId],
             horse_id: horseId
         )
         let created: Conversation = try await client.create(table: "conversations", data: conv)
-        conversations.insert(created, at: 0)
-        return created
+        // Resolve the other person's display name
+        if let profile: User = try? await client.get(table: "profiles", id: otherId) {
+            conv = created
+            conv.other_name = profile.displayName
+        } else {
+            conv = created
+        }
+        conversations.insert(conv, at: 0)
+        return conv
+    }
+
+    /// Look up a user by email, then start a conversation with them.
+    @MainActor
+    func startConversation(withEmail email: String, currentUserId: String) async throws -> Conversation {
+        let otherUser: User = try await client.getUserByEmail(email)
+        return try await startConversation(with: otherUser.id, currentUserId: currentUserId)
     }
 
     func startPolling(conversationId: String) {

@@ -4,9 +4,12 @@ struct ListingDetailView: View {
     let listing: MarketplaceListing
     let vm: MarketplaceViewModel
     @Environment(AuthManager.self) private var auth
+    @Environment(MessagesViewModel.self) private var messagesVM
     @Environment(\.dismiss) private var dismiss
     @State private var showDeleteAlert = false
     @State private var currentImageIndex = 0
+    @State private var chatConversation: Conversation?
+    @State private var isStartingConv = false
 
     private var isMyListing: Bool { listing.seller_id == auth.user?.id }
 
@@ -88,8 +91,22 @@ struct ListingDetailView: View {
 
                         // Contact Button
                         if !isMyListing {
-                            EQPrimaryButton(title: "Contact Seller", icon: "message.fill") {
-                                // Navigate to messages
+                            EQPrimaryButton(title: isStartingConv ? "Opening Chat…" : "Contact Seller",
+                                            icon: "message.fill",
+                                            isLoading: isStartingConv) {
+                                guard let sellerId = listing.seller_id,
+                                      let me = auth.user else { return }
+                                isStartingConv = true
+                                Task {
+                                    let conv = try? await messagesVM.startConversation(
+                                        with: sellerId,
+                                        currentUserId: me.id
+                                    )
+                                    await MainActor.run {
+                                        chatConversation = conv
+                                        isStartingConv = false
+                                    }
+                                }
                             }
                         }
                     }
@@ -108,6 +125,11 @@ struct ListingDetailView: View {
                             Image(systemName: "trash").foregroundStyle(.white)
                         }
                     }
+                }
+            }
+            .sheet(item: $chatConversation) { conv in
+                NavigationStack {
+                    ChatView(conversation: conv, vm: messagesVM)
                 }
             }
             .alert("Remove listing?", isPresented: $showDeleteAlert) {

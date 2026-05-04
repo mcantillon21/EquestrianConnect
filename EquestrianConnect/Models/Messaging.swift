@@ -8,9 +8,18 @@ struct Conversation: Codable, Identifiable, Hashable {
     var last_message_date: String?
     var unread_count: Int?
     var created_date: String?
+    var other_name: String?  // resolved locally after profile lookup; never sent to/from server
+
+    private enum CodingKeys: String, CodingKey {
+        case id, participants, horse_id, last_message, last_message_date, unread_count, created_date
+    }
 
     func otherParticipant(currentUserId: String) -> String {
         participants.first(where: { $0 != currentUserId }) ?? participants.first ?? ""
+    }
+
+    func displayName(currentUserId: String) -> String {
+        other_name ?? otherParticipant(currentUserId: currentUserId)
     }
 
     static func == (lhs: Conversation, rhs: Conversation) -> Bool { lhs.id == rhs.id }

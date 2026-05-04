@@ -363,6 +363,22 @@ final class SupabaseClient {
         return try await create(table: "profiles", data: seed)
     }
 
+    /// Look up a user profile by their auth email.
+    func getUserByEmail(_ email: String) async throws -> User {
+        let qi = [URLQueryItem(name: "email", value: "eq.\(email)")]
+        let results: [User] = try await restRequest(method: "GET", path: "profiles", queryItems: qi)
+        guard let first = results.first else { throw SupabaseError.notFound }
+        return first
+    }
+
+    /// Batch-fetch multiple profiles by their user IDs.
+    func getProfiles(ids: [String]) async throws -> [User] {
+        guard !ids.isEmpty else { return [] }
+        let list = ids.joined(separator: ",")
+        let qi = [URLQueryItem(name: "id", value: "in.(\(list))")]
+        return try await restRequest(method: "GET", path: "profiles", queryItems: qi)
+    }
+
     func updateProfile(_ user: User) async throws -> User {
         let qi = [URLQueryItem(name: "id", value: "eq.\(user.id)")]
         let results: [User] = try await restRequest(method: "PATCH", path: "profiles", queryItems: qi, body: user)
