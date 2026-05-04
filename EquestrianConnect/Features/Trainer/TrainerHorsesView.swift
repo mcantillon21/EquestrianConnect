@@ -7,11 +7,16 @@ struct TrainerHorsesView: View {
     @State private var showAddSheet = false
 
     private var ownerGroups: [(id: String, displayName: String, horses: [Horse])] {
-        let grouped = Dictionary(grouping: vm.horses) { $0.owner_id ?? "Unknown" }
+        let grouped = Dictionary(grouping: vm.horses) { $0.owner_id ?? "" }
         return grouped.map { ownerId, horses in
-            let name = ownerNames[ownerId]
-                ?? ownerId.components(separatedBy: "@").first?.capitalized
-                ?? ownerId
+            let name: String
+            if ownerId.isEmpty {
+                name = "No Owner Assigned"
+            } else {
+                name = ownerNames[ownerId]
+                    ?? (ownerId.contains("@") ? String(ownerId.split(separator: "@").first ?? "").capitalized : nil)
+                    ?? ownerId
+            }
             return (id: ownerId, displayName: name, horses: horses.sorted { $0.name < $1.name })
         }.sorted { $0.displayName < $1.displayName }
     }
@@ -75,6 +80,9 @@ struct TrainerHorsesView: View {
             }
             .sheet(isPresented: $showAddSheet) {
                 HorseFormView(vm: vm)
+            }
+            .navigationDestination(for: Horse.self) { horse in
+                HorseProfileView(horse: horse, vm: vm)
             }
             .task {
                 guard let id = auth.user?.id else { return }
@@ -178,9 +186,6 @@ struct OwnerHorsesView: View {
         }
         .sheet(isPresented: $showAddSheet) {
             HorseFormView(vm: vm)
-        }
-        .navigationDestination(for: Horse.self) { horse in
-            HorseProfileView(horse: horse, vm: vm)
         }
     }
 }
