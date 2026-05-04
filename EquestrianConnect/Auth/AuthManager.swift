@@ -137,6 +137,14 @@ final class AuthManager {
     func selectRole(_ role: String) async throws {
         guard var updated = user else { return }
         updated.user_type = role
+        if isDemoMode {
+            await MainActor.run { user = updated }
+            return
+        }
+        #if targetEnvironment(simulator)
+        await MainActor.run { user = updated }
+        return
+        #endif
         user = try await client.updateProfile(updated)
     }
 
