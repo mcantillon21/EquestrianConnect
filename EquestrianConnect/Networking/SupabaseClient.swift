@@ -400,6 +400,13 @@ final class SupabaseClient {
         return try await restRequest(method: "GET", path: "profiles", queryItems: qi)
     }
 
+    func getProfilesByEmail(emails: [String]) async throws -> [User] {
+        guard !emails.isEmpty else { return [] }
+        let list = emails.joined(separator: ",")
+        let qi = [URLQueryItem(name: "email", value: "in.(\(list))")]
+        return try await restRequest(method: "GET", path: "profiles", queryItems: qi)
+    }
+
     func updateProfile(_ user: User) async throws -> User {
         let qi = [URLQueryItem(name: "id", value: "eq.\(user.id)")]
         let results: [User] = try await restRequest(method: "PATCH", path: "profiles", queryItems: qi, body: user)

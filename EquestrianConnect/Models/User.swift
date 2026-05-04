@@ -9,6 +9,7 @@ struct User: Codable, Identifiable, Hashable {
     var created_date: String?
 
     var displayName: String { full_name ?? email }
+    var firstName: String { full_name?.components(separatedBy: " ").first ?? full_name ?? email.components(separatedBy: "@").first ?? email }
     var isOwner: Bool  { user_type == "owner" }
     var isTrainer: Bool { user_type == "trainer" }
     var hasRole: Bool { user_type != nil && !user_type!.isEmpty }

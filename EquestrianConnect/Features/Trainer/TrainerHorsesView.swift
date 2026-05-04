@@ -12,10 +12,12 @@ struct TrainerHorsesView: View {
             let name: String
             if ownerId.isEmpty {
                 name = "No Owner Assigned"
+            } else if let resolved = ownerNames[ownerId] {
+                name = resolved
+            } else if ownerId.contains("@") {
+                name = String(ownerId.split(separator: "@").first ?? Substring(ownerId)).capitalized
             } else {
-                name = ownerNames[ownerId]
-                    ?? (ownerId.contains("@") ? String(ownerId.split(separator: "@").first ?? "").capitalized : nil)
-                    ?? ownerId
+                name = ownerId
             }
             return (id: ownerId, displayName: name, horses: horses.sorted { $0.name < $1.name })
         }.sorted { $0.displayName < $1.displayName }
@@ -102,10 +104,21 @@ struct TrainerHorsesView: View {
         #if targetEnvironment(simulator)
         return
         #endif
-        let ids = Array(Set(vm.horses.compactMap { $0.owner_id }))
-        guard !ids.isEmpty,
-              let profiles = try? await SupabaseClient.shared.getProfiles(ids: ids) else { return }
-        let map = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0.displayName) })
+        let allIds = Array(Set(vm.horses.compactMap { $0.owner_id }.filter { !$0.isEmpty }))
+        guard !allIds.isEmpty else { return }
+
+        let emails = allIds.filter { $0.contains("@") }
+        let uuids  = allIds.filter { !$0.contains("@") }
+
+        var map: [String: String] = [:]
+
+        if let profiles = try? await SupabaseClient.shared.getProfiles(ids: uuids) {
+            for p in profiles { map[p.id] = p.firstName }
+        }
+        if let profiles = try? await SupabaseClient.shared.getProfilesByEmail(emails: emails) {
+            for p in profiles { map[p.email] = p.firstName }
+        }
+
         await MainActor.run { ownerNames = map }
     }
 }
@@ -162,7 +175,9 @@ struct OwnerHorsesView: View {
             ScrollView {
                 LazyVStack(spacing: EQSpacing.sm) {
                     ForEach(horses) { horse in
-                        NavigationLink(value: horse) {
+                        NavigationLink {
+                            HorseProfileView(horse: horse, vm: vm)
+                        } label: {
                             TrainerHorseCard(horse: horse)
                         }
                         .buttonStyle(.plain)
