@@ -130,16 +130,26 @@ final class SupabaseClient {
         }
     }
 
-    /// Verify the OTP code sent to email
+    /// Verify the OTP code sent to email.
+    /// Tries "email" type first (existing users), then "signup" (new users whose account isn't confirmed yet).
     func verifyOtp(email: String, token: String) async throws -> AuthResponse {
         struct Body: Encodable { let email: String; let token: String; let type: String }
-        var req = URLRequest(url: URL(string: "\(authURL)/verify")!)
-        req.httpMethod = "POST"
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.setValue(anonKey, forHTTPHeaderField: "apikey")
-        req.httpBody = try JSONEncoder().encode(Body(email: email, token: token, type: "email"))
 
-        let (data, response) = try await URLSession.shared.data(for: req)
+        func attempt(type otpType: String) async throws -> (Data, URLResponse) {
+            var req = URLRequest(url: URL(string: "\(authURL)/verify")!)
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            req.setValue(anonKey, forHTTPHeaderField: "apikey")
+            req.httpBody = try JSONEncoder().encode(Body(email: email, token: token, type: otpType))
+            return try await URLSession.shared.data(for: req)
+        }
+
+        var (data, response) = try await attempt(type: "email")
+        if let http = response as? HTTPURLResponse, !((200...299).contains(http.statusCode)) {
+            // New/unconfirmed users need type "signup"
+            (data, response) = try await attempt(type: "signup")
+        }
+
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             let msg = Self.extractErrorMessage(from: data)
             throw SupabaseError.httpError(
