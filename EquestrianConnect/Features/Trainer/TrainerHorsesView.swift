@@ -3,17 +3,17 @@ import SwiftUI
 struct TrainerHorsesView: View {
     @Environment(AuthManager.self) private var auth
     @State private var vm = HorsesViewModel()
-    @State private var selectedOwner = ""
+    @State private var ownerNames: [String: String] = [:]
     @State private var showAddSheet = false
 
-    private var owners: [String] {
-        let emails = vm.horses.compactMap { $0.owner_id }
-        return Array(Set(emails)).sorted()
-    }
-
-    private var filtered: [Horse] {
-        guard !selectedOwner.isEmpty else { return vm.filtered }
-        return vm.filtered.filter { $0.owner_id == selectedOwner }
+    private var ownerGroups: [(id: String, displayName: String, horses: [Horse])] {
+        let grouped = Dictionary(grouping: vm.horses) { $0.owner_id ?? "Unknown" }
+        return grouped.map { ownerId, horses in
+            let name = ownerNames[ownerId]
+                ?? ownerId.components(separatedBy: "@").first?.capitalized
+                ?? ownerId
+            return (id: ownerId, displayName: name, horses: horses.sorted { $0.name < $1.name })
+        }.sorted { $0.displayName < $1.displayName }
     }
 
     var body: some View {
@@ -21,64 +21,52 @@ struct TrainerHorsesView: View {
             ZStack {
                 Color.eqWarmWhite.ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Owner filter pills
-                    if !owners.isEmpty {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: EQSpacing.sm) {
-                                OwnerPill(label: "All", isSelected: selectedOwner.isEmpty) {
-                                    selectedOwner = ""
+                if vm.isLoading {
+                    EQLoadingView()
+                } else if ownerGroups.isEmpty {
+                    EmptyStateView(
+                        icon: "person.2",
+                        title: "No Clients Yet",
+                        subtitle: "Add a horse and assign an owner, or have owners add you as their trainer.",
+                        actionTitle: "Add Horse",
+                        action: { showAddSheet = true }
+                    )
+                } else {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(ownerGroups, id: \.id) { group in
+                                NavigationLink {
+                                    OwnerHorsesView(
+                                        ownerName: group.displayName,
+                                        horses: group.horses,
+                                        vm: vm
+                                    )
+                                } label: {
+                                    OwnerRow(
+                                        name: group.displayName,
+                                        horseCount: group.horses.count
+                                    )
                                 }
-                                ForEach(owners, id: \.self) { email in
-                                    OwnerPill(
-                                        label: email.components(separatedBy: "@").first?.capitalized ?? email,
-                                        isSelected: selectedOwner == email
-                                    ) {
-                                        selectedOwner = email
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, EQSpacing.md)
-                            .padding(.vertical, EQSpacing.sm)
-                        }
-                        EQDivider()
-                    }
-
-                    if vm.isLoading {
-                        EQLoadingView()
-                    } else if filtered.isEmpty {
-                        EmptyStateView(
-                            icon: "figure.equestrian.sports",
-                            title: "No Client Horses",
-                            subtitle: vm.searchText.isEmpty
-                                ? "Owners can assign horses to you by adding your email as their trainer."
-                                : "No horses match your search."
-                        )
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: EQSpacing.sm) {
-                                ForEach(filtered) { horse in
-                                    NavigationLink(value: horse) {
-                                        TrainerHorseCard(horse: horse)
-                                    }
-                                    .buttonStyle(.plain)
+                                .buttonStyle(.eqPress)
+                                if group.id != ownerGroups.last?.id {
+                                    EQDivider().padding(.leading, 72)
                                 }
                             }
-                            .padding(.horizontal, EQSpacing.md)
-                            .padding(.vertical, EQSpacing.md)
                         }
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+                        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
+                        .padding(.horizontal, EQSpacing.md)
+                        .padding(.vertical, EQSpacing.md)
                     }
                 }
             }
-            .navigationTitle("Client Horses")
+            .navigationTitle("Clients")
             .eqNavAppearance()
             .eqMoreMenu()
-            .searchable(text: $vm.searchText, prompt: "Search horses…")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddSheet = true
-                    } label: {
+                    Button { showAddSheet = true } label: {
                         Image(systemName: "plus")
                             .font(.body.weight(.semibold))
                             .foregroundStyle(.white)
@@ -88,54 +76,124 @@ struct TrainerHorsesView: View {
             .sheet(isPresented: $showAddSheet) {
                 HorseFormView(vm: vm)
             }
-            .navigationDestination(for: Horse.self) { horse in
-                HorseProfileView(horse: horse, vm: vm)
-            }
             .task {
                 guard let id = auth.user?.id else { return }
                 await vm.load(userId: id, isTrainer: true)
+                await resolveOwnerNames()
             }
             .refreshable {
                 guard let id = auth.user?.id else { return }
                 await vm.load(userId: id, isTrainer: true)
+                await resolveOwnerNames()
             }
         }
     }
+
+    private func resolveOwnerNames() async {
+        guard !isDemoMode else { return }
+        #if targetEnvironment(simulator)
+        return
+        #endif
+        let ids = Array(Set(vm.horses.compactMap { $0.owner_id }))
+        guard !ids.isEmpty,
+              let profiles = try? await SupabaseClient.shared.getProfiles(ids: ids) else { return }
+        let map = Dictionary(uniqueKeysWithValues: profiles.map { ($0.id, $0.displayName) })
+        await MainActor.run { ownerNames = map }
+    }
 }
 
-// MARK: - Owner Filter Pill
+// MARK: - Owner Row
 
-private struct OwnerPill: View {
-    let label: String
-    let isSelected: Bool
-    let onTap: () -> Void
+private struct OwnerRow: View {
+    let name: String
+    let horseCount: Int
 
     var body: some View {
-        Button(action: onTap) {
-            Text(label)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
-                .foregroundStyle(isSelected ? .white : Color.eqSaddleBrown)
-                .padding(.horizontal, EQSpacing.md)
-                .padding(.vertical, 6)
-                .background(
-                    isSelected ? AnyShapeStyle(Color.eqSaddleBrown) : AnyShapeStyle(Color.eqMutedBrown),
-                    in: Capsule()
-                )
+        HStack(spacing: EQSpacing.md) {
+            ZStack {
+                Circle()
+                    .fill(Color.eqMutedBrown)
+                    .frame(width: 48, height: 48)
+                Text(name.prefix(2).uppercased())
+                    .font(.eqFont(16, weight: .bold))
+                    .foregroundStyle(Color.eqSaddleBrown)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(name)
+                    .font(.eqFont(16, weight: .semibold))
+                    .foregroundStyle(Color.eqInk)
+                Text("\(horseCount) \(horseCount == 1 ? "horse" : "horses")")
+                    .font(.eqFont(13, weight: .regular))
+                    .foregroundStyle(Color.eqMuted)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.eqLightTan)
         }
-        .animation(.easeInOut(duration: 0.15), value: isSelected)
+        .padding(.horizontal, EQSpacing.md)
+        .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Owner Horses Detail View
+
+struct OwnerHorsesView: View {
+    let ownerName: String
+    let horses: [Horse]
+    let vm: HorsesViewModel
+    @State private var showAddSheet = false
+
+    var body: some View {
+        ZStack {
+            Color.eqWarmWhite.ignoresSafeArea()
+
+            ScrollView {
+                LazyVStack(spacing: EQSpacing.sm) {
+                    ForEach(horses) { horse in
+                        NavigationLink(value: horse) {
+                            TrainerHorseCard(horse: horse)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, EQSpacing.md)
+                .padding(.vertical, EQSpacing.md)
+            }
+        }
+        .navigationTitle(ownerName)
+        .navigationBarTitleDisplayMode(.large)
+        .eqNavAppearance()
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAddSheet = true } label: {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+        .sheet(isPresented: $showAddSheet) {
+            HorseFormView(vm: vm)
+        }
+        .navigationDestination(for: Horse.self) { horse in
+            HorseProfileView(horse: horse, vm: vm)
+        }
     }
 }
 
 // MARK: - Trainer Horse Card
 
-private struct TrainerHorseCard: View {
+struct TrainerHorseCard: View {
     let horse: Horse
     @State private var todayRidden = false
 
     var body: some View {
         EQCard {
             HStack(spacing: EQSpacing.md) {
-                // Photo
                 Group {
                     if let img = horse.profile_image, !img.isEmpty {
                         AsyncImage(url: URL(string: img)) { phase in
@@ -168,15 +226,10 @@ private struct TrainerHorseCard: View {
                             .foregroundStyle(Color.eqMuted)
                     }
 
-                    if let owner = horse.owner_id {
-                        HStack(spacing: 4) {
-                            Image(systemName: "person.circle")
-                                .font(.caption2)
-                                .foregroundStyle(Color.eqSaddleBrown)
-                            Text(owner.components(separatedBy: "@").first ?? owner)
-                                .font(.caption)
-                                .foregroundStyle(Color.eqSaddleBrown)
-                        }
+                    if let discipline = horse.discipline {
+                        Text(discipline)
+                            .font(.caption)
+                            .foregroundStyle(Color.eqSaddleBrown)
                     }
                 }
 
@@ -206,13 +259,17 @@ private struct TrainerHorseCard: View {
     }
 
     private func checkToday() async {
+        guard !isDemoMode else { return }
+        #if targetEnvironment(simulator)
+        return
+        #endif
         let today = Date().iso8601DateString
         if let logs: [TrainingLog] = try? await SupabaseClient.shared.filter(
             table: "training_logs",
             query: [URLQueryItem(name: "horse_id", value: "eq.\(horse.id)"),
                     URLQueryItem(name: "date", value: "eq.\(today)")]
         ) {
-            todayRidden = !logs.isEmpty
+            await MainActor.run { todayRidden = !logs.isEmpty }
         }
     }
 }
