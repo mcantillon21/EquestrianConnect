@@ -4,6 +4,7 @@ struct TrainerHorsesView: View {
     @Environment(AuthManager.self) private var auth
     @State private var vm = HorsesViewModel()
     @State private var selectedOwner = ""
+    @State private var showAddSheet = false
 
     private var owners: [String] {
         let emails = vm.horses.compactMap { $0.owner_id }
@@ -73,6 +74,20 @@ struct TrainerHorsesView: View {
             .eqNavAppearance()
             .eqMoreMenu()
             .searchable(text: $vm.searchText, prompt: "Search horses…")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showAddSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+            .sheet(isPresented: $showAddSheet) {
+                HorseFormView(vm: vm)
+            }
             .navigationDestination(for: Horse.self) { horse in
                 HorseProfileView(horse: horse, vm: vm)
             }
