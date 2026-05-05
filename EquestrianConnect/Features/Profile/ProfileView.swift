@@ -10,6 +10,7 @@ struct ProfileView: View {
     @State private var showLogoutAlert = false
     @State private var showRoleChange = false
     @State private var codeCopied = false
+    @State private var isGeneratingCode = false
 
     var body: some View {
         NavigationStack {
@@ -158,11 +159,27 @@ struct ProfileView: View {
                     }
                     .padding(.vertical, EQSpacing.md)
                 } else {
-                    Button("Generate Code") {
-                        Task { try? await auth.generateCodeIfNeeded() }
+                    Button {
+                        isGeneratingCode = true
+                        Task {
+                            do {
+                                try await auth.generateCodeIfNeeded()
+                            } catch {
+                                await MainActor.run { self.error = error.localizedDescription }
+                            }
+                            await MainActor.run { isGeneratingCode = false }
+                        }
+                    } label: {
+                        if isGeneratingCode {
+                            ProgressView()
+                                .tint(Color.eqSaddleBrown)
+                        } else {
+                            Text("Generate Code")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.eqSaddleBrown)
+                        }
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.eqSaddleBrown)
+                    .disabled(isGeneratingCode)
                     .padding(.vertical, EQSpacing.md)
                 }
             }
