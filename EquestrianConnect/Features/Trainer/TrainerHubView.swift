@@ -3,11 +3,29 @@ import SwiftUI
 struct TrainerHubView: View {
     @Environment(AuthManager.self) private var auth
     @State private var horses: [Horse] = []
+    @State private var ownerNames: [String: String] = [:]
     @State private var upcomingEvents: [CalendarEvent] = []
     @State private var trainingLogs: [TrainingLog] = []
     @State private var conversations: [Conversation] = []
     @State private var isLoading = false
     @State private var error: String?
+
+    private var ownerGroups: [(id: String, name: String, horses: [Horse])] {
+        let grouped = Dictionary(grouping: horses) { $0.owner_id ?? "" }
+        return grouped.map { ownerId, hs in
+            let name: String
+            if ownerId.isEmpty {
+                name = "No Owner"
+            } else if let resolved = ownerNames[ownerId] {
+                name = resolved
+            } else if ownerId.contains("@") {
+                name = String(ownerId.split(separator: "@").first ?? Substring(ownerId)).capitalized
+            } else {
+                name = ownerId
+            }
+            return (id: ownerId, name: name, horses: hs.sorted { $0.name < $1.name })
+        }.sorted { $0.name < $1.name }
+    }
 
     private var todayRidden: Int {
         let today = Date().iso8601DateString
@@ -30,9 +48,9 @@ struct TrainerHubView: View {
                                 // Stats row
                                 HStack(spacing: EQSpacing.sm) {
                                     EQStatCard(
-                                        icon: "figure.equestrian.sports",
-                                        value: "\(horses.count)",
-                                        label: "Client Horses"
+                                        icon: "person.2.fill",
+                                        value: "\(ownerGroups.count)",
+                                        label: "Clients"
                                     )
                                     EQStatCard(
                                         icon: "checkmark.circle.fill",
@@ -42,24 +60,29 @@ struct TrainerHubView: View {
                                     )
                                 }
 
-                                // Today's Training
-                                if !horses.isEmpty {
+                                // Today's Training — grouped by owner
+                                if !ownerGroups.isEmpty {
                                     VStack(spacing: EQSpacing.sm) {
                                         EQSectionRow(title: "Today's Training")
-                                        ForEach(horses) { horse in
-                                            TrainingCheckRow(
-                                                horse: horse,
-                                                isRidden: trainingLogs.contains(where: {
-                                                    $0.horse_id == horse.id && $0.date == Date().iso8601DateString
-                                                }),
+                                        ForEach(ownerGroups, id: \.id) { group in
+                                            OwnerTrainingSection(
+                                                ownerName: group.name,
+                                                horses: group.horses,
+                                                trainingLogs: trainingLogs,
                                                 trainerId: auth.user?.id ?? ""
                                             ) { log in
                                                 if let log {
                                                     trainingLogs.append(log)
-                                                } else {
+                                                } else if let last = trainingLogs.last {
                                                     let today = Date().iso8601DateString
-                                                    trainingLogs.removeAll { $0.horse_id == horse.id && $0.date == today }
+                                                    trainingLogs.removeAll {
+                                                        group.horses.map(\.id).contains($0.horse_id) && $0.date == today
+                                                    }
+                                                    _ = last
                                                 }
+                                            } onRemove: { horseId in
+                                                let today = Date().iso8601DateString
+                                                trainingLogs.removeAll { $0.horse_id == horseId && $0.date == today }
                                             }
                                         }
                                     }
@@ -89,7 +112,7 @@ struct TrainerHubView: View {
                                     EmptyStateView(
                                         icon: "chart.bar.fill",
                                         title: "Your Hub is Ready",
-                                        subtitle: "Once owners assign their horses to you, they'll appear here for daily tracking."
+                                        subtitle: "Once owners connect using your trainer code and assign horses to you, their training will appear here."
                                     )
                                     .frame(height: 280)
                                 }
@@ -148,10 +171,26 @@ struct TrainerHubView: View {
             upcomingEvents = e.filter { ($0.start_date.toDate() ?? .distantPast) >= Date() }
             trainingLogs = l
             conversations = c
+            await resolveOwnerNames()
         } catch {
             self.error = error.localizedDescription
         }
         isLoading = false
+    }
+
+    private func resolveOwnerNames() async {
+        let allIds = Array(Set(horses.compactMap { $0.owner_id }.filter { !$0.isEmpty }))
+        guard !allIds.isEmpty else { return }
+        let emails = allIds.filter { $0.contains("@") }
+        let uuids  = allIds.filter { !$0.contains("@") }
+        var map: [String: String] = [:]
+        if let profiles = try? await SupabaseClient.shared.getProfiles(ids: uuids) {
+            for p in profiles { map[p.id] = p.firstName }
+        }
+        if let profiles = try? await SupabaseClient.shared.getProfilesByEmail(emails: emails) {
+            for p in profiles { map[p.email] = p.firstName }
+        }
+        await MainActor.run { ownerNames = map }
     }
 
     @MainActor
@@ -165,73 +204,130 @@ struct TrainerHubView: View {
             cal.date(byAdding: .hour, value: -hours, to: now)!.iso8601DateString
         }
 
+        let imgMidnight = "https://images.unsplash.com/photo-1670212433014-b2435aca06a4?w=400&fit=crop"
+        let imgArrow    = "https://images.unsplash.com/photo-1517326451550-8612522c096e?w=400&fit=crop"
+        let imgStorm    = "https://images.unsplash.com/photo-1641226469021-f81abb75108c?w=400&fit=crop"
+        let imgRuby     = "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?w=400&fit=crop"
+
         horses = [
             Horse(id: "h1", name: "Midnight Star", barn_name: "Midnight",
                   breed: "Thoroughbred", color: "Black", date_of_birth: "2018-04-15",
                   gender: "mare", registration_number: nil, discipline: "Dressage",
-                  owner_id: "jordan@eq.app", trainer_id: "preview@eq.app",
-                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Applebite-Gentlemen.jpg/400px-Applebite-Gentlemen.jpg",
-                  total_earnings: nil, created_date: nil),
+                  owner_id: "jordan@demo.com", trainer_id: "preview-trainer",
+                  profile_image: imgMidnight, total_earnings: nil, created_date: nil),
             Horse(id: "h2", name: "Golden Arrow", barn_name: "Arrow",
                   breed: "Quarter Horse", color: "Palomino", date_of_birth: "2015-07-22",
                   gender: "gelding", registration_number: nil, discipline: "Western Pleasure",
-                  owner_id: "sarah@eq.app", trainer_id: "preview@eq.app",
-                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Mare_and_foal_%28Kvetina-Marie%29.jpg/400px-Mare_and_foal_%28Kvetina-Marie%29.jpg",
-                  total_earnings: nil, created_date: nil),
+                  owner_id: "sarah@demo.com", trainer_id: "preview-trainer",
+                  profile_image: imgArrow, total_earnings: nil, created_date: nil),
             Horse(id: "h3", name: "Storm Chaser", barn_name: nil,
                   breed: "Warmblood", color: "Dapple Grey", date_of_birth: "2019-01-10",
                   gender: "stallion", registration_number: nil, discipline: "Jumping",
-                  owner_id: "mike@eq.app", trainer_id: "preview@eq.app",
-                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/WCLV07m.JPG/400px-WCLV07m.JPG",
-                  total_earnings: nil, created_date: nil),
+                  owner_id: "mike@demo.com", trainer_id: "preview-trainer",
+                  profile_image: imgStorm, total_earnings: nil, created_date: nil),
             Horse(id: "h4", name: "Ruby Red", barn_name: "Ruby",
                   breed: "Arabian", color: "Chestnut", date_of_birth: "2017-09-03",
                   gender: "mare", registration_number: nil, discipline: "Endurance",
-                  owner_id: "lisa@eq.app", trainer_id: "preview@eq.app",
-                  profile_image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Halterstandingshotarabianone.jpg/400px-Halterstandingshotarabianone.jpg",
-                  total_earnings: nil, created_date: nil),
+                  owner_id: "lisa@demo.com", trainer_id: "preview-trainer",
+                  profile_image: imgRuby, total_earnings: nil, created_date: nil),
         ]
 
         upcomingEvents = [
             CalendarEvent(id: "e1", title: "Farrier Visit", type: "farrier",
                           start_date: future(1), end_date: nil, all_day: false,
                           location: "Rolling Hills Barn", description: nil,
-                          horse_ids: ["h1", "h2"], user_id: "preview@eq.app",
+                          horse_ids: ["h1", "h2"], user_id: "preview-trainer",
                           is_recurring: false, recurrence_frequency: nil,
                           recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
             CalendarEvent(id: "e2", title: "Dressage Lesson — Midnight", type: "lesson",
                           start_date: future(3), end_date: nil, all_day: false,
                           location: "Arena B", description: nil,
-                          horse_ids: ["h1"], user_id: "preview@eq.app",
+                          horse_ids: ["h1"], user_id: "preview-trainer",
                           is_recurring: true, recurrence_frequency: "weekly",
                           recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
             CalendarEvent(id: "e3", title: "Spring Horse Show", type: "horse_show",
                           start_date: future(12), end_date: nil, all_day: true,
                           location: "County Equestrian Center", description: nil,
-                          horse_ids: ["h1", "h2", "h3"], user_id: "preview@eq.app",
+                          horse_ids: ["h1", "h2", "h3"], user_id: "preview-trainer",
                           is_recurring: false, recurrence_frequency: nil,
                           recurrence_count: nil, recurrence_parent_id: nil, created_date: nil),
         ]
 
-        // Pre-mark Midnight as ridden today for a realistic demo
         trainingLogs = [
             TrainingLog(id: "l1", horse_id: "h1", date: now.iso8601DateString,
-                        user_id: "preview@eq.app", created_date: nil),
+                        user_id: "preview-trainer", created_date: nil),
         ]
 
-        conversations = [
-            Conversation(id: "c1", participants: ["preview@eq.app", "jordan@eq.app"],
-                         horse_id: "h1", last_message: "How did Midnight do in her lesson?",
-                         last_message_date: past(1), unread_count: 2, created_date: nil),
-            Conversation(id: "c2", participants: ["preview@eq.app", "sarah@eq.app"],
-                         horse_id: "h2", last_message: "Arrow is ready for the show!",
-                         last_message_date: past(5), unread_count: 1, created_date: nil),
-            Conversation(id: "c3", participants: ["preview@eq.app", "mike@eq.app"],
-                         horse_id: "h3", last_message: "Can we reschedule Tuesday's session?",
-                         last_message_date: past(24), unread_count: 0, created_date: nil),
-        ]
+        var c1 = Conversation(id: "c1", participants: ["preview-trainer", "jordan@demo.com"],
+                              horse_id: "h1", last_message: "How did Midnight do in her lesson?",
+                              last_message_date: past(1), unread_count: 2, created_date: nil)
+        c1.other_name = "Jordan"
+        var c2 = Conversation(id: "c2", participants: ["preview-trainer", "sarah@demo.com"],
+                              horse_id: "h2", last_message: "Arrow is ready for the show!",
+                              last_message_date: past(5), unread_count: 1, created_date: nil)
+        c2.other_name = "Sarah"
+        var c3 = Conversation(id: "c3", participants: ["preview-trainer", "mike@demo.com"],
+                              horse_id: "h3", last_message: "Can we reschedule Tuesday's session?",
+                              last_message_date: past(24), unread_count: 0, created_date: nil)
+        c3.other_name = "Mike"
+        conversations = [c1, c2, c3]
 
         isLoading = false
+    }
+}
+
+// MARK: - Owner Training Section
+
+private struct OwnerTrainingSection: View {
+    let ownerName: String
+    let horses: [Horse]
+    let trainingLogs: [TrainingLog]
+    let trainerId: String
+    let onAdd: (TrainingLog?) -> Void
+    let onRemove: (String) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Owner header
+            HStack(spacing: EQSpacing.sm) {
+                InitialsAvatar(text: ownerName, size: 28, background: Color.eqMutedBrown)
+                Text(ownerName)
+                    .font(.eqFont(13, weight: .semibold))
+                    .foregroundStyle(Color.eqSaddleBrown)
+                Spacer()
+                Text("\(ridden)/\(horses.count) ridden")
+                    .font(.caption)
+                    .foregroundStyle(Color.eqMuted)
+            }
+            .padding(.horizontal, EQSpacing.md)
+            .padding(.vertical, EQSpacing.xs)
+
+            VStack(spacing: EQSpacing.xs) {
+                ForEach(horses) { horse in
+                    TrainingCheckRow(
+                        horse: horse,
+                        isRidden: trainingLogs.contains(where: {
+                            $0.horse_id == horse.id && $0.date == Date().iso8601DateString
+                        }),
+                        trainerId: trainerId
+                    ) { log in
+                        if let log {
+                            onAdd(log)
+                        } else {
+                            onRemove(horse.id)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.bottom, EQSpacing.xs)
+    }
+
+    private var ridden: Int {
+        let today = Date().iso8601DateString
+        return horses.filter { horse in
+            trainingLogs.contains { $0.horse_id == horse.id && $0.date == today }
+        }.count
     }
 }
 
@@ -267,7 +363,7 @@ private struct TrainerHeroHeader: View {
 
 // MARK: - Training Check Row
 
-private struct TrainingCheckRow: View {
+struct TrainingCheckRow: View {
     let horse: Horse
     let isRidden: Bool
     let trainerId: String
@@ -278,7 +374,6 @@ private struct TrainingCheckRow: View {
     var body: some View {
         EQCard {
             HStack(spacing: EQSpacing.md) {
-                // Horse avatar
                 Group {
                     if let img = horse.profile_image, !img.isEmpty {
                         AsyncImage(url: URL(string: img)) { phase in
@@ -338,7 +433,6 @@ private struct TrainingCheckRow: View {
         isBusy = true
         let today = Date().iso8601DateString
         if isRidden {
-            // Find and delete the log
             if let logs: [TrainingLog] = try? await SupabaseClient.shared.filter(
                 table: "training_logs",
                 query: [URLQueryItem(name: "horse_id", value: "eq.\(horse.id)"),
@@ -395,9 +489,9 @@ private struct HubConvRow: View {
     var body: some View {
         EQCard {
             HStack(spacing: EQSpacing.md) {
-                InitialsAvatar(text: conv.otherParticipant(currentUserId: currentUserId), size: 40)
+                InitialsAvatar(text: conv.other_name ?? conv.otherParticipant(currentUserId: currentUserId), size: 40)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(conv.otherParticipant(currentUserId: currentUserId))
+                    Text(conv.other_name ?? conv.otherParticipant(currentUserId: currentUserId))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Color.eqDarkBrown)
                     if let last = conv.last_message {

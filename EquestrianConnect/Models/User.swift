@@ -6,6 +6,8 @@ struct User: Codable, Identifiable, Hashable {
     var full_name: String?
     var user_type: String?  // "owner" | "trainer"
     var profile_image: String?
+    var trainer_code: String?   // trainers: unique 6-char code owners use to connect
+    var trainer_id: String?     // owners: their trainer's user ID
     var created_date: String?
 
     var displayName: String { full_name ?? email }

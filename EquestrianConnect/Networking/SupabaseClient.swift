@@ -400,6 +400,14 @@ final class SupabaseClient {
         return try await restRequest(method: "GET", path: "profiles", queryItems: qi)
     }
 
+    func getTrainerByCode(_ code: String) async throws -> User {
+        let qi = [URLQueryItem(name: "trainer_code", value: "eq.\(code)"),
+                  URLQueryItem(name: "user_type", value: "eq.trainer")]
+        let results: [User] = try await restRequest(method: "GET", path: "profiles", queryItems: qi)
+        guard let first = results.first else { throw SupabaseError.notFound }
+        return first
+    }
+
     func getProfilesByEmail(emails: [String]) async throws -> [User] {
         guard !emails.isEmpty else { return [] }
         let list = emails.joined(separator: ",")

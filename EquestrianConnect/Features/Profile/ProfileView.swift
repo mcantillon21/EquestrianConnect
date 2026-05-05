@@ -9,6 +9,7 @@ struct ProfileView: View {
     @State private var error: String?
     @State private var showLogoutAlert = false
     @State private var showRoleChange = false
+    @State private var codeCopied = false
 
     var body: some View {
         NavigationStack {
@@ -19,6 +20,12 @@ struct ProfileView: View {
                     VStack(spacing: EQSpacing.md) {
                         profileHeader
                         accountSection
+                        if auth.user?.isTrainer == true {
+                            trainerCodeSection
+                        }
+                        if auth.user?.isOwner == true {
+                            trainerConnectionSection
+                        }
                         roleSection
                         appSection
                         dangerSection
@@ -116,6 +123,74 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showRoleChange) {
             RoleSelectView()
+        }
+    }
+
+    private var trainerCodeSection: some View {
+        ProfileSection(title: "Your Trainer Code") {
+            VStack(spacing: EQSpacing.md) {
+                Text("Share this code with owners so they can connect to your account")
+                    .font(.caption)
+                    .foregroundStyle(Color.eqMuted)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, EQSpacing.md)
+                    .padding(.top, EQSpacing.sm)
+
+                if let code = auth.user?.trainer_code, !code.isEmpty {
+                    HStack(spacing: EQSpacing.sm) {
+                        Text(code)
+                            .font(.system(size: 30, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Color.eqDarkBrown)
+                            .tracking(5)
+
+                        Button {
+                            UIPasteboard.general.string = code
+                            codeCopied = true
+                            Task {
+                                try? await Task.sleep(for: .seconds(2))
+                                await MainActor.run { codeCopied = false }
+                            }
+                        } label: {
+                            Image(systemName: codeCopied ? "checkmark.circle.fill" : "doc.on.doc")
+                                .font(.title3)
+                                .foregroundStyle(codeCopied ? Color.green : Color.eqSaddleBrown)
+                        }
+                    }
+                    .padding(.vertical, EQSpacing.md)
+                } else {
+                    Button("Generate Code") {
+                        Task { try? await auth.generateCodeIfNeeded() }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.eqSaddleBrown)
+                    .padding(.vertical, EQSpacing.md)
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private var trainerConnectionSection: some View {
+        ProfileSection(title: "My Trainer") {
+            if auth.user?.trainer_id != nil {
+                ProfileRow(label: "Connected", value: "Trainer linked")
+            } else {
+                HStack {
+                    Text("Not connected")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.eqMuted)
+                    Spacer()
+                    NavigationLink {
+                        TrainerCodeEntryView()
+                    } label: {
+                        Text("Add Trainer")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.eqSaddleBrown)
+                    }
+                }
+                .padding(.horizontal, EQSpacing.md)
+                .padding(.vertical, 12)
+            }
         }
     }
 

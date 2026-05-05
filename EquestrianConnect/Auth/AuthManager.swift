@@ -94,7 +94,8 @@ final class AuthManager {
                     id: "apple-review-user",
                     email: email,
                     full_name: "App Review",
-                    user_type: "owner"
+                    user_type: "owner",
+                    trainer_id: "preview-trainer"
                 )
                 isLoading = false
             }
@@ -137,6 +138,24 @@ final class AuthManager {
     func selectRole(_ role: String) async throws {
         guard var updated = user else { return }
         updated.user_type = role
+        if role == "trainer" && (updated.trainer_code == nil || updated.trainer_code!.isEmpty) {
+            updated.trainer_code = Self.generateTrainerCode()
+        }
+        if isDemoMode {
+            user = updated
+            return
+        }
+        #if targetEnvironment(simulator)
+        user = updated
+        return
+        #endif
+        user = try await client.updateProfile(updated)
+    }
+
+    func linkToTrainer(code: String) async throws {
+        guard var updated = user else { return }
+        let trainer = try await client.getTrainerByCode(code.uppercased())
+        updated.trainer_id = trainer.id
         if isDemoMode {
             await MainActor.run { user = updated }
             return
@@ -145,7 +164,25 @@ final class AuthManager {
         await MainActor.run { user = updated }
         return
         #endif
+        let saved = try await client.updateProfile(updated)
+        await MainActor.run { user = saved }
+    }
+
+    @MainActor
+    func generateCodeIfNeeded() async throws {
+        guard var updated = user, updated.isTrainer,
+              updated.trainer_code == nil || updated.trainer_code!.isEmpty else { return }
+        updated.trainer_code = Self.generateTrainerCode()
+        if isDemoMode { user = updated; return }
+        #if targetEnvironment(simulator)
+        user = updated; return
+        #endif
         user = try await client.updateProfile(updated)
+    }
+
+    static func generateTrainerCode() -> String {
+        let chars = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
+        return String((0..<6).map { _ in chars.randomElement()! })
     }
 
     // MARK: Update Profile
@@ -166,7 +203,9 @@ final class AuthManager {
             id: "preview-\(role)",
             email: "preview@equestrianconnect.app",
             full_name: role == "trainer" ? "Alex Trainer" : "Jordan Owner",
-            user_type: role
+            user_type: role,
+            trainer_code: role == "trainer" ? "DEMO01" : nil,
+            trainer_id: role == "owner" ? "preview-trainer" : nil
         )
     }
 
