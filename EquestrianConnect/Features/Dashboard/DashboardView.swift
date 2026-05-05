@@ -7,6 +7,8 @@ struct DashboardView: View {
     @State private var horsesVM = HorsesViewModel()
     @State private var selectedEvent: CalendarEvent?
     @State private var selectedConv: Conversation?
+    @State private var trainerProfile: User?
+    @State private var isOpeningTrainerChat = false
 
     var body: some View {
         NavigationStack {
@@ -54,6 +56,7 @@ struct DashboardView: View {
                     await vm.loadTrainer(trainerId: user.id)
                 } else {
                     await vm.load(userId: user.id)
+                    await loadTrainerProfile()
                 }
             }
             .refreshable {
@@ -62,6 +65,7 @@ struct DashboardView: View {
                     await vm.loadTrainer(trainerId: user.id)
                 } else {
                     await vm.load(userId: user.id)
+                    await loadTrainerProfile()
                 }
             }
         }
@@ -98,6 +102,45 @@ struct DashboardView: View {
                 }
             }
 
+            // My Trainer — quick message shortcut for owners
+            if auth.user?.isOwner == true, let trainer = trainerProfile {
+                VStack(alignment: .leading, spacing: EQSpacing.sm) {
+                    DashSectionHeader(title: "My Trainer")
+                        .padding(.horizontal, EQSpacing.md)
+                    Button {
+                        Task { await openTrainerChat(trainerId: trainer.id) }
+                    } label: {
+                        HStack(spacing: EQSpacing.md) {
+                            InitialsAvatar(text: trainer.displayName, size: 46, background: Color.eqSaddleBrown)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(trainer.displayName)
+                                    .font(.eqFont(15, weight: .semibold))
+                                    .foregroundStyle(Color.eqInk)
+                                Text("Tap to send a message")
+                                    .font(.eqFont(13, weight: .regular))
+                                    .foregroundStyle(Color.eqMuted)
+                            }
+                            Spacer()
+                            if isOpeningTrainerChat {
+                                ProgressView().tint(Color.eqSaddleBrown)
+                            } else {
+                                Image(systemName: "message.fill")
+                                    .font(.body)
+                                    .foregroundStyle(Color.eqSaddleBrown)
+                            }
+                        }
+                        .padding(.horizontal, EQSpacing.md)
+                        .padding(.vertical, EQSpacing.sm + 2)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: EQRadius.lg, style: .continuous))
+                        .shadow(color: Color.eqInk.opacity(0.06), radius: 14, x: 0, y: 5)
+                    }
+                    .buttonStyle(.eqPress)
+                    .disabled(isOpeningTrainerChat)
+                    .padding(.horizontal, EQSpacing.md)
+                }
+            }
+
             // Messages — individual floating cards
             if !vm.recentConversations.isEmpty {
                 VStack(alignment: .leading, spacing: EQSpacing.sm) {
@@ -123,6 +166,39 @@ struct DashboardView: View {
             }
         }
         .padding(.bottom, EQSpacing.xxl)
+    }
+
+    // MARK: - Trainer Contact Helpers
+
+    private func loadTrainerProfile() async {
+        guard let trainerId = auth.user?.trainer_id, !trainerId.isEmpty else { return }
+        guard !isDemoMode else {
+            await MainActor.run {
+                trainerProfile = User(id: "preview-trainer", email: "trainer@demo.com",
+                                     full_name: "Alex Trainer", user_type: "trainer")
+            }
+            return
+        }
+        #if targetEnvironment(simulator)
+        await MainActor.run {
+            trainerProfile = User(id: "preview-trainer", email: "trainer@demo.com",
+                                 full_name: "Alex Trainer", user_type: "trainer")
+        }
+        return
+        #endif
+        if let profile: User = try? await SupabaseClient.shared.get(table: "profiles", id: trainerId) {
+            await MainActor.run { trainerProfile = profile }
+        }
+    }
+
+    private func openTrainerChat(trainerId: String) async {
+        guard let myId = auth.user?.id else { return }
+        await MainActor.run { isOpeningTrainerChat = true }
+        let conv = try? await messagesVM.startConversation(with: trainerId, currentUserId: myId)
+        await MainActor.run {
+            isOpeningTrainerChat = false
+            if let conv { selectedConv = conv }
+        }
     }
 
     // MARK: - Stats Row

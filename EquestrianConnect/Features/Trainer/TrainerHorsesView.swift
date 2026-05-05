@@ -45,6 +45,7 @@ struct TrainerHorsesView: View {
                                 NavigationLink {
                                     OwnerHorsesView(
                                         ownerName: group.displayName,
+                                        ownerId: group.id,
                                         horses: group.horses,
                                         vm: vm
                                     )
@@ -164,9 +165,13 @@ private struct OwnerRow: View {
 
 struct OwnerHorsesView: View {
     let ownerName: String
+    let ownerId: String
     let horses: [Horse]
     let vm: HorsesViewModel
+    @Environment(MessagesViewModel.self) private var messagesVM
+    @Environment(AuthManager.self) private var auth
     @State private var showAddSheet = false
+    @State private var selectedConv: Conversation?
 
     var body: some View {
         ZStack {
@@ -192,16 +197,39 @@ struct OwnerHorsesView: View {
         .eqNavAppearance()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showAddSheet = true } label: {
-                    Image(systemName: "plus")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
+                HStack(spacing: EQSpacing.sm) {
+                    Button {
+                        Task { await openChat() }
+                    } label: {
+                        Image(systemName: "message")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
+                    Button { showAddSheet = true } label: {
+                        Image(systemName: "plus")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.white)
+                    }
                 }
             }
         }
         .sheet(isPresented: $showAddSheet) {
             HorseFormView(vm: vm)
         }
+        .sheet(item: $selectedConv) { conv in
+            NavigationStack { ChatView(conversation: conv, vm: messagesVM) }
+        }
+    }
+
+    private func openChat() async {
+        guard let myId = auth.user?.id else { return }
+        let conv: Conversation?
+        if ownerId.contains("@") {
+            conv = try? await messagesVM.startConversation(withEmail: ownerId, currentUserId: myId)
+        } else {
+            conv = try? await messagesVM.startConversation(with: ownerId, currentUserId: myId)
+        }
+        await MainActor.run { if let conv { selectedConv = conv } }
     }
 }
 

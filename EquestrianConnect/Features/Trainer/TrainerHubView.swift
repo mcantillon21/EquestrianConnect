@@ -67,6 +67,7 @@ struct TrainerHubView: View {
                                         ForEach(ownerGroups, id: \.id) { group in
                                             OwnerTrainingSection(
                                                 ownerName: group.name,
+                                                ownerId: group.id,
                                                 horses: group.horses,
                                                 trainingLogs: trainingLogs,
                                                 trainerId: auth.user?.id ?? ""
@@ -280,11 +281,16 @@ struct TrainerHubView: View {
 
 private struct OwnerTrainingSection: View {
     let ownerName: String
+    let ownerId: String
     let horses: [Horse]
     let trainingLogs: [TrainingLog]
     let trainerId: String
     let onAdd: (TrainingLog?) -> Void
     let onRemove: (String) -> Void
+
+    @Environment(MessagesViewModel.self) private var messagesVM
+    @Environment(AuthManager.self) private var auth
+    @State private var selectedConv: Conversation?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -298,9 +304,21 @@ private struct OwnerTrainingSection: View {
                 Text("\(ridden)/\(horses.count) ridden")
                     .font(.caption)
                     .foregroundStyle(Color.eqMuted)
+                Button {
+                    Task { await openChat() }
+                } label: {
+                    Image(systemName: "message")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.eqSaddleBrown)
+                        .padding(6)
+                        .background(Color.eqMutedBrown, in: Circle())
+                }
             }
             .padding(.horizontal, EQSpacing.md)
             .padding(.vertical, EQSpacing.xs)
+            .sheet(item: $selectedConv) { conv in
+                NavigationStack { ChatView(conversation: conv, vm: messagesVM) }
+            }
 
             VStack(spacing: EQSpacing.xs) {
                 ForEach(horses) { horse in
@@ -328,6 +346,17 @@ private struct OwnerTrainingSection: View {
         return horses.filter { horse in
             trainingLogs.contains { $0.horse_id == horse.id && $0.date == today }
         }.count
+    }
+
+    private func openChat() async {
+        guard let myId = auth.user?.id else { return }
+        let conv: Conversation?
+        if ownerId.contains("@") {
+            conv = try? await messagesVM.startConversation(withEmail: ownerId, currentUserId: myId)
+        } else {
+            conv = try? await messagesVM.startConversation(with: ownerId, currentUserId: myId)
+        }
+        await MainActor.run { if let conv { selectedConv = conv } }
     }
 }
 
