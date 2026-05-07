@@ -20,7 +20,7 @@ final class HorsesViewModel {
 
     private let client = SupabaseClient.shared
 
-    func load(userId: String, isTrainer: Bool = false) async {
+    func load(userId: String, userEmail: String = "", isTrainer: Bool = false) async {
         #if targetEnvironment(simulator)
         await MainActor.run { loadSimulatorMock(isTrainer: isTrainer) }
         return
@@ -31,10 +31,20 @@ final class HorsesViewModel {
         }
         await MainActor.run { isLoading = true; error = nil }
         do {
-            let field = isTrainer ? "trainer_id" : "owner_id"
+            let idsField = isTrainer ? "trainer_ids" : "owner_ids"
+            let idField = isTrainer ? "trainer_id" : "owner_id"
+            var orParts = ["(\(idField).eq.\(userId)"]
+            if !userEmail.isEmpty && userEmail != userId {
+                orParts[0] += ",\(idField).eq.\(userEmail)"
+            }
+            orParts[0] += ",\(idsField).cs.{\(userId)}"
+            if !userEmail.isEmpty && userEmail != userId {
+                orParts[0] += ",\(idsField).cs.{\(userEmail)}"
+            }
+            orParts[0] += ")"
             let fetched: [Horse] = try await client.filter(
                 table: "horses",
-                query: [URLQueryItem(name: field, value: "eq.\(userId)")],
+                query: [URLQueryItem(name: "or", value: orParts[0])],
                 order: "name.asc",
                 limit: 100
             )

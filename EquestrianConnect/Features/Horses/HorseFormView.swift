@@ -16,8 +16,8 @@ struct HorseFormView: View {
     @State private var dateOfBirth = Date()
     @State private var hasDOB = false
     @State private var registrationNumber = ""
-    @State private var trainerEmail = ""
-    @State private var ownerEmail = ""
+    @State private var trainerEmails: [String] = []
+    @State private var ownerEmails: [String] = []
     @State private var photoItem: PhotosPickerItem? = nil
     @State private var selectedImageData: Data? = nil
     @State private var uploadedImageURL: String? = nil
@@ -103,21 +103,17 @@ struct HorseFormView: View {
                             )
 
                             if auth.user?.isOwner == true {
-                                EQTextField(
-                                    label: "Trainer Email",
+                                EmailTagsField(
+                                    label: "Trainer(s)",
                                     placeholder: "trainer@barn.com",
-                                    text: $trainerEmail,
-                                    keyboard: .emailAddress
+                                    emails: $trainerEmails
                                 )
-                                .textInputAutocapitalization(.never)
                             } else if auth.user?.isTrainer == true {
-                                EQTextField(
-                                    label: "Owner Email",
+                                EmailTagsField(
+                                    label: "Owner(s)",
                                     placeholder: "owner@barn.com",
-                                    text: $ownerEmail,
-                                    keyboard: .emailAddress
+                                    emails: $ownerEmails
                                 )
-                                .textInputAutocapitalization(.never)
                             }
                         }
                         .padding(.horizontal, EQSpacing.md)
@@ -237,8 +233,8 @@ struct HorseFormView: View {
         gender = h.gender ?? ""
         discipline = h.discipline ?? ""
         registrationNumber = h.registration_number ?? ""
-        trainerEmail = h.trainer_id ?? ""
-        ownerEmail = h.owner_id ?? ""
+        ownerEmails = h.allOwnerIds
+        trainerEmails = h.allTrainerIds
         uploadedImageURL = h.profile_image
         if let dob = h.date_of_birth?.toDate() {
             dateOfBirth = dob
@@ -267,6 +263,25 @@ struct HorseFormView: View {
         isSaving = true
         error = nil
         let id = editingHorse?.id ?? UUID().uuidString
+        let isTrainer = auth.user?.isTrainer == true
+        // owner_id/trainer_id keep the primary (UUID-based) link; *_ids arrays hold email-based additions
+        let primaryOwnerId: String?
+        let primaryTrainerId: String?
+        let ownerIdsArr: [String]?
+        let trainerIdsArr: [String]?
+
+        if isTrainer {
+            primaryTrainerId = editingHorse?.trainer_id ?? auth.user?.id
+            trainerIdsArr = nil
+            primaryOwnerId = ownerEmails.first
+            ownerIdsArr = ownerEmails.isEmpty ? nil : ownerEmails
+        } else {
+            primaryOwnerId = editingHorse?.owner_id ?? auth.user?.id
+            ownerIdsArr = nil
+            primaryTrainerId = trainerEmails.first
+            trainerIdsArr = trainerEmails.isEmpty ? nil : trainerEmails
+        }
+
         var horse = Horse(
             id: id,
             name: name,
@@ -277,8 +292,10 @@ struct HorseFormView: View {
             gender: gender.isEmpty ? nil : gender,
             registration_number: registrationNumber.isEmpty ? nil : registrationNumber,
             discipline: discipline.isEmpty ? nil : discipline,
-            owner_id: editingHorse?.owner_id ?? (auth.user?.isTrainer == true ? (ownerEmail.isEmpty ? nil : ownerEmail) : auth.user?.id),
-            trainer_id: editingHorse?.trainer_id ?? (auth.user?.isTrainer == true ? auth.user?.id : (trainerEmail.isEmpty ? nil : trainerEmail)),
+            owner_id: primaryOwnerId,
+            trainer_id: primaryTrainerId,
+            owner_ids: ownerIdsArr,
+            trainer_ids: trainerIdsArr,
             profile_image: uploadedImageURL ?? editingHorse?.profile_image,
             total_earnings: editingHorse?.total_earnings
         )
@@ -294,6 +311,95 @@ struct HorseFormView: View {
             self.error = error.localizedDescription
         }
         isSaving = false
+    }
+}
+
+// MARK: - Email Tags Field
+
+struct EmailTagsField: View {
+    let label: String
+    let placeholder: String
+    @Binding var emails: [String]
+    @State private var newEmail = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: EQSpacing.xs) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.eqDarkBrown)
+
+            if !emails.isEmpty {
+                VStack(spacing: 6) {
+                    ForEach(emails, id: \.self) { email in
+                        HStack(spacing: 8) {
+                            Image(systemName: "person.fill")
+                                .font(.caption)
+                                .foregroundStyle(Color.eqSaddleBrown)
+                            Text(email)
+                                .font(.subheadline)
+                                .foregroundStyle(Color.eqDarkBrown)
+                                .lineLimit(1)
+                            Spacer()
+                            Button {
+                                emails.removeAll { $0 == email }
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundStyle(Color.eqMuted)
+                            }
+                        }
+                        .padding(.horizontal, EQSpacing.sm)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                                .fill(Color.eqMutedBrown.opacity(0.4))
+                        )
+                    }
+                }
+            }
+
+            HStack(spacing: EQSpacing.sm) {
+                TextField(placeholder, text: $newEmail)
+                    .font(.subheadline)
+                    .keyboardType(.emailAddress)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .padding(.horizontal, EQSpacing.sm)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                            .fill(Color.white)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                                    .strokeBorder(Color.eqLightTan, lineWidth: 1)
+                            )
+                    )
+
+                Button {
+                    let e = newEmail.trimmingCharacters(in: .whitespaces).lowercased()
+                    guard !e.isEmpty, !emails.contains(e) else { return }
+                    emails.append(e)
+                    newEmail = ""
+                } label: {
+                    Text("Add")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, EQSpacing.md)
+                        .padding(.vertical, 10)
+                        .background(Color.eqSaddleBrown)
+                        .clipShape(RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous))
+                }
+                .disabled(newEmail.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(EQSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                .fill(Color.white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                        .strokeBorder(Color.eqLightTan, lineWidth: 1)
+                )
+        )
     }
 }
 

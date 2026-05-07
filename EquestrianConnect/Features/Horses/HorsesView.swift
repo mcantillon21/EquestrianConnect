@@ -64,11 +64,11 @@ struct HorsesView: View {
             }
             .task {
                 guard let user = auth.user else { return }
-                await vm.load(userId: user.id, isTrainer: user.isTrainer)
+                await vm.load(userId: user.id, userEmail: user.email ?? "", isTrainer: user.isTrainer)
             }
             .refreshable {
                 guard let user = auth.user else { return }
-                await vm.load(userId: user.id, isTrainer: user.isTrainer)
+                await vm.load(userId: user.id, userEmail: user.email ?? "", isTrainer: user.isTrainer)
             }
         }
     }

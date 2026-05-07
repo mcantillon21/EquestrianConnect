@@ -288,28 +288,29 @@ private struct HorseHeroHeader: View {
 
 private struct OverviewTab: View {
     let horse: Horse
-    @State private var trainerName: String? = nil
-    @State private var ownerName: String? = nil
+    @State private var resolvedOwners: [String] = []
+    @State private var resolvedTrainers: [String] = []
 
     var body: some View {
         VStack(spacing: EQSpacing.md) {
             EQCard {
                 VStack(spacing: 0) {
-                    ForEach(details, id: \.0) { label, value in
+                    ForEach(staticDetails, id: \.0) { label, value in
                         if let v = value, !v.isEmpty {
-                            HStack {
-                                Text(label)
-                                    .font(.subheadline)
-                                    .foregroundStyle(Color.eqMuted)
-                                Spacer()
-                                Text(v)
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(Color.eqDarkBrown)
-                                    .multilineTextAlignment(.trailing)
-                            }
-                            .padding(.vertical, 10)
-                            EQDivider()
+                            detailRow(label: label, value: v)
                         }
+                    }
+                    // Owners
+                    let ownerDisplay = resolvedOwners.isEmpty ? horse.allOwnerIds.compactMap(fallbackName) : resolvedOwners
+                    if !ownerDisplay.isEmpty {
+                        detailRow(label: ownerDisplay.count == 1 ? "Owner" : "Owners",
+                                  value: ownerDisplay.joined(separator: ", "))
+                    }
+                    // Trainers
+                    let trainerDisplay = resolvedTrainers.isEmpty ? horse.allTrainerIds.compactMap(fallbackName) : resolvedTrainers
+                    if !trainerDisplay.isEmpty {
+                        detailRow(label: trainerDisplay.count == 1 ? "Trainer" : "Trainers",
+                                  value: trainerDisplay.joined(separator: ", "))
                     }
                 }
                 .padding(.vertical, -8)
@@ -318,7 +319,23 @@ private struct OverviewTab: View {
         .task { await resolveNames() }
     }
 
-    private var details: [(String, String?)] {
+    @ViewBuilder
+    private func detailRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(Color.eqMuted)
+            Spacer()
+            Text(value)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.eqDarkBrown)
+                .multilineTextAlignment(.trailing)
+        }
+        .padding(.vertical, 10)
+        EQDivider()
+    }
+
+    private var staticDetails: [(String, String?)] {
         [
             ("Breed",           horse.breed),
             ("Color",           horse.color),
@@ -327,13 +344,11 @@ private struct OverviewTab: View {
             ("Age",             horse.age.map { "\($0) years" }),
             ("Discipline",      horse.discipline),
             ("Registration #",  horse.registration_number),
-            ("Owner",           ownerName ?? displayName(horse.owner_id)),
-            ("Trainer",         trainerName ?? displayName(horse.trainer_id)),
         ]
     }
 
-    private func displayName(_ id: String?) -> String? {
-        guard let id, !id.isEmpty else { return nil }
+    private func fallbackName(_ id: String) -> String? {
+        guard !id.isEmpty else { return nil }
         if id.contains("@") { return String(id.split(separator: "@").first ?? Substring(id)).capitalized }
         return nil
     }
@@ -343,17 +358,31 @@ private struct OverviewTab: View {
         #if targetEnvironment(simulator)
         return
         #endif
-        async let trainerTask: User? = resolve(id: horse.trainer_id)
-        async let ownerTask: User? = resolve(id: horse.owner_id)
-        let (trainer, owner) = await (trainerTask, ownerTask)
+        let ownerIds = horse.allOwnerIds
+        let trainerIds = horse.allTrainerIds
+        async let ownersResolved = resolveAll(ids: ownerIds)
+        async let trainersResolved = resolveAll(ids: trainerIds)
+        let (owners, trainers) = await (ownersResolved, trainersResolved)
         await MainActor.run {
-            trainerName = trainer?.displayName
-            ownerName = owner?.displayName
+            resolvedOwners = owners
+            resolvedTrainers = trainers
         }
     }
 
-    private func resolve(id: String?) async -> User? {
-        guard let id, !id.isEmpty else { return nil }
+    private func resolveAll(ids: [String]) async -> [String] {
+        var names: [String] = []
+        for id in ids {
+            if let user = await resolveOne(id: id) {
+                names.append(user.displayName)
+            } else if let fallback = fallbackName(id) {
+                names.append(fallback)
+            }
+        }
+        return names
+    }
+
+    private func resolveOne(id: String) async -> User? {
+        guard !id.isEmpty else { return nil }
         if id.contains("@") {
             return try? await SupabaseClient.shared.getUserByEmail(id)
         } else {

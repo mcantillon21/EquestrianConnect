@@ -11,8 +11,19 @@ struct TrainerHubView: View {
     @State private var error: String?
 
     private var ownerGroups: [(id: String, name: String, horses: [Horse])] {
-        let grouped = Dictionary(grouping: horses) { $0.owner_id ?? "" }
-        return grouped.map { ownerId, hs in
+        // Group by all owner IDs (combining owner_id + owner_ids)
+        var groups: [String: [Horse]] = [:]
+        for horse in horses {
+            let ids = horse.allOwnerIds
+            if ids.isEmpty {
+                groups["", default: []].append(horse)
+            } else {
+                for oid in ids {
+                    groups[oid, default: []].append(horse)
+                }
+            }
+        }
+        return groups.map { ownerId, hs in
             let name: String
             if ownerId.isEmpty {
                 name = "No Owner"
@@ -141,7 +152,9 @@ struct TrainerHubView: View {
 
     @MainActor
     private func load() async {
-        guard let userId = auth.user?.id else { return }
+        guard let user = auth.user else { return }
+        let userId = user.id
+        let userEmail = user.email ?? ""
 
         #if targetEnvironment(simulator)
         loadMock()
@@ -154,8 +167,13 @@ struct TrainerHubView: View {
 
         isLoading = true
         error = nil
+        var trainerOrParts = "(trainer_id.eq.\(userId)"
+        if !userEmail.isEmpty { trainerOrParts += ",trainer_id.eq.\(userEmail)" }
+        trainerOrParts += ",trainer_ids.cs.{\(userId)}"
+        if !userEmail.isEmpty { trainerOrParts += ",trainer_ids.cs.{\(userEmail)}" }
+        trainerOrParts += ")"
         async let horsesTask: [Horse] = try SupabaseClient.shared.filter(
-            table: "horses", query: [URLQueryItem(name: "trainer_id", value: "eq.\(userId)")], order: "name.asc", limit: 100
+            table: "horses", query: [URLQueryItem(name: "or", value: trainerOrParts)], order: "name.asc", limit: 100
         )
         async let eventsTask: [CalendarEvent] = try SupabaseClient.shared.filter(
             table: "calendar_events", query: [URLQueryItem(name: "user_id", value: "eq.\(userId)")], order: "start_date.asc", limit: 20
@@ -180,7 +198,7 @@ struct TrainerHubView: View {
     }
 
     private func resolveOwnerNames() async {
-        let allIds = Array(Set(horses.compactMap { $0.owner_id }.filter { !$0.isEmpty }))
+        let allIds = Array(Set(horses.flatMap { $0.allOwnerIds }.filter { !$0.isEmpty }))
         guard !allIds.isEmpty else { return }
         let emails = allIds.filter { $0.contains("@") }
         let uuids  = allIds.filter { !$0.contains("@") }

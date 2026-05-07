@@ -53,18 +53,18 @@ struct DashboardView: View {
             .task {
                 guard let user = auth.user else { return }
                 if user.isTrainer {
-                    await vm.loadTrainer(trainerId: user.id)
+                    await vm.loadTrainer(trainerId: user.id, trainerEmail: user.email ?? "")
                 } else {
-                    await vm.load(userId: user.id)
+                    await vm.load(userId: user.id, userEmail: user.email ?? "")
                     await loadTrainerProfile()
                 }
             }
             .refreshable {
                 guard let user = auth.user else { return }
                 if user.isTrainer {
-                    await vm.loadTrainer(trainerId: user.id)
+                    await vm.loadTrainer(trainerId: user.id, trainerEmail: user.email ?? "")
                 } else {
-                    await vm.load(userId: user.id)
+                    await vm.load(userId: user.id, userEmail: user.email ?? "")
                     await loadTrainerProfile()
                 }
             }

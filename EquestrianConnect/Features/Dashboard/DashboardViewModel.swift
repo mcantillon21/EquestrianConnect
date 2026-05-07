@@ -11,7 +11,7 @@ final class DashboardViewModel {
 
     private let client = SupabaseClient.shared
 
-    func load(userId: String) async {
+    func load(userId: String, userEmail: String = "") async {
         #if targetEnvironment(simulator)
         await MainActor.run { loadSimulatorMock(isTrainer: false) }
         return
@@ -21,9 +21,18 @@ final class DashboardViewModel {
             return
         }
         await MainActor.run { isLoading = true; error = nil }
+        var ownerOrParts = "(owner_id.eq.\(userId)"
+        if !userEmail.isEmpty && userEmail != userId {
+            ownerOrParts += ",owner_id.eq.\(userEmail)"
+        }
+        ownerOrParts += ",owner_ids.cs.{\(userId)}"
+        if !userEmail.isEmpty && userEmail != userId {
+            ownerOrParts += ",owner_ids.cs.{\(userEmail)}"
+        }
+        ownerOrParts += ")"
         async let horsesTask: [Horse] = try client.filter(
             table: "horses",
-            query: [URLQueryItem(name: "owner_id", value: "eq.\(userId)")],
+            query: [URLQueryItem(name: "or", value: ownerOrParts)],
             order: "name.asc",
             limit: 50
         )
@@ -66,7 +75,7 @@ final class DashboardViewModel {
         }
     }
 
-    func loadTrainer(trainerId: String) async {
+    func loadTrainer(trainerId: String, trainerEmail: String = "") async {
         #if targetEnvironment(simulator)
         await MainActor.run { loadSimulatorMock(isTrainer: true) }
         return
@@ -76,9 +85,18 @@ final class DashboardViewModel {
             return
         }
         await MainActor.run { isLoading = true; error = nil }
+        var trainerOrParts = "(trainer_id.eq.\(trainerId)"
+        if !trainerEmail.isEmpty && trainerEmail != trainerId {
+            trainerOrParts += ",trainer_id.eq.\(trainerEmail)"
+        }
+        trainerOrParts += ",trainer_ids.cs.{\(trainerId)}"
+        if !trainerEmail.isEmpty && trainerEmail != trainerId {
+            trainerOrParts += ",trainer_ids.cs.{\(trainerEmail)}"
+        }
+        trainerOrParts += ")"
         async let horsesTask: [Horse] = try client.filter(
             table: "horses",
-            query: [URLQueryItem(name: "trainer_id", value: "eq.\(trainerId)")],
+            query: [URLQueryItem(name: "or", value: trainerOrParts)],
             order: "name.asc",
             limit: 50
         )

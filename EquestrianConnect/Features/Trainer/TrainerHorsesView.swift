@@ -7,8 +7,18 @@ struct TrainerHorsesView: View {
     @State private var showAddSheet = false
 
     private var ownerGroups: [(id: String, displayName: String, horses: [Horse])] {
-        let grouped = Dictionary(grouping: vm.horses) { $0.owner_id ?? "" }
-        return grouped.map { ownerId, horses in
+        var groups: [String: [Horse]] = [:]
+        for horse in vm.horses {
+            let ids = horse.allOwnerIds
+            if ids.isEmpty {
+                groups["", default: []].append(horse)
+            } else {
+                for oid in ids {
+                    groups[oid, default: []].append(horse)
+                }
+            }
+        }
+        return groups.map { ownerId, horses in
             let name: String
             if ownerId.isEmpty {
                 name = "No Owner Assigned"
@@ -88,13 +98,13 @@ struct TrainerHorsesView: View {
                 HorseProfileView(horse: horse, vm: vm)
             }
             .task {
-                guard let id = auth.user?.id else { return }
-                await vm.load(userId: id, isTrainer: true)
+                guard let user = auth.user else { return }
+                await vm.load(userId: user.id, userEmail: user.email ?? "", isTrainer: true)
                 await resolveOwnerNames()
             }
             .refreshable {
-                guard let id = auth.user?.id else { return }
-                await vm.load(userId: id, isTrainer: true)
+                guard let user = auth.user else { return }
+                await vm.load(userId: user.id, userEmail: user.email ?? "", isTrainer: true)
                 await resolveOwnerNames()
             }
         }
@@ -105,7 +115,7 @@ struct TrainerHorsesView: View {
         #if targetEnvironment(simulator)
         return
         #endif
-        let allIds = Array(Set(vm.horses.compactMap { $0.owner_id }.filter { !$0.isEmpty }))
+        let allIds = Array(Set(vm.horses.flatMap { $0.allOwnerIds }.filter { !$0.isEmpty }))
         guard !allIds.isEmpty else { return }
 
         let emails = allIds.filter { $0.contains("@") }

@@ -12,9 +12,22 @@ struct Horse: Codable, Identifiable, Hashable {
     var discipline: String?
     var owner_id: String?
     var trainer_id: String?
+    var owner_ids: [String]?
+    var trainer_ids: [String]?
     var profile_image: String?
     var total_earnings: Double?
     var created_date: String?
+
+    var allOwnerIds: [String] {
+        var result = owner_ids ?? []
+        if let oid = owner_id, !oid.isEmpty, !result.contains(oid) { result.insert(oid, at: 0) }
+        return result
+    }
+    var allTrainerIds: [String] {
+        var result = trainer_ids ?? []
+        if let tid = trainer_id, !tid.isEmpty, !result.contains(tid) { result.insert(tid, at: 0) }
+        return result
+    }
 
     var displayName: String { barn_name ?? name }
     var age: Int? {
