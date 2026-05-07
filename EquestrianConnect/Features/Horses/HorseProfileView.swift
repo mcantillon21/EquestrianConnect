@@ -1064,29 +1064,327 @@ private struct TrainingTab: View {
 
 private struct EarningsTab: View {
     let horse: Horse
+    @State private var entries: [EarningEntry] = []
+    @State private var isLoading = false
+    @State private var showAdd = false
+
+    private var total: Double { entries.reduce(0) { $0 + $1.amount } }
 
     var body: some View {
         VStack(spacing: EQSpacing.md) {
-            if let earnings = horse.total_earnings {
-                EQCard {
-                    VStack(spacing: EQSpacing.sm) {
+            // Total card
+            EQCard {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Total Earnings")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(Color.eqMuted)
-                        Text(earnings.currencyString)
-                            .font(.eqSerif(.title, weight: .bold))
+                        Text(total.currencyString)
+                            .font(.eqSerif(.title2, weight: .bold))
                             .foregroundStyle(Color.eqDarkBrown)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, EQSpacing.sm)
+                    Spacer()
+                    ZStack {
+                        Circle().fill(Color.eqMutedBrown).frame(width: 44, height: 44)
+                        Image(systemName: "dollarsign")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(Color.eqSaddleBrown)
+                    }
+                }
+                .padding(.vertical, EQSpacing.xs)
+            }
+
+            if isLoading {
+                ProgressView().tint(Color.eqSaddleBrown).padding()
+            } else if entries.isEmpty {
+                EmptyStateView(
+                    icon: "dollarsign.circle.fill",
+                    title: "No Earnings Yet",
+                    subtitle: "Tap + to log prize money, lesson fees, or any income for \(horse.name).",
+                    actionTitle: "Add Earning",
+                    action: { showAdd = true }
+                )
+                .frame(height: 220)
+            } else {
+                VStack(spacing: EQSpacing.xs) {
+                    ForEach(entries) { entry in
+                        EarningRow(entry: entry) {
+                            Task { await delete(entry) }
+                        }
+                    }
                 }
             }
-            EmptyStateView(
-                icon: "dollarsign.circle.fill",
-                title: "Earnings History",
-                subtitle: "Show earnings and prize money history here"
-            )
-            .frame(height: 200)
+        }
+        .task { await load() }
+        .sheet(isPresented: $showAdd, onDismiss: { Task { await load() } }) {
+            AddEarningView(horseId: horse.id)
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showAdd = true } label: {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+    }
+
+    private func load() async {
+        guard !isDemoMode else {
+            await MainActor.run {
+                entries = [
+                    EarningEntry(id: "e1", horse_id: horse.id, amount: 2500,
+                                 title: "Grand Prix Win", category: "Show / Competition",
+                                 date: "2026-04-12", notes: nil, created_date: nil),
+                    EarningEntry(id: "e2", horse_id: horse.id, amount: 800,
+                                 title: "Weekly Lessons", category: "Lesson Fee",
+                                 date: "2026-04-05", notes: "4 sessions", created_date: nil),
+                    EarningEntry(id: "e3", horse_id: horse.id, amount: 1200,
+                                 title: "Spring Show — Reserve Champion", category: "Prize Money",
+                                 date: "2026-03-20", notes: nil, created_date: nil),
+                ]
+            }
+            return
+        }
+        #if targetEnvironment(simulator)
+        await MainActor.run {
+            entries = [
+                EarningEntry(id: "e1", horse_id: horse.id, amount: 2500,
+                             title: "Grand Prix Win", category: "Show / Competition",
+                             date: "2026-04-12", notes: nil, created_date: nil),
+                EarningEntry(id: "e2", horse_id: horse.id, amount: 800,
+                             title: "Weekly Lessons", category: "Lesson Fee",
+                             date: "2026-04-05", notes: "4 sessions", created_date: nil),
+            ]
+        }
+        return
+        #endif
+        await MainActor.run { isLoading = true }
+        if let loaded = try? await SupabaseClient.shared.getEarnings(horseId: horse.id) {
+            await MainActor.run { entries = loaded }
+        }
+        await MainActor.run { isLoading = false }
+    }
+
+    private func delete(_ entry: EarningEntry) async {
+        try? await SupabaseClient.shared.deleteEarning(id: entry.id)
+        await MainActor.run { entries.removeAll { $0.id == entry.id } }
+    }
+}
+
+// MARK: - Earning Row
+
+private struct EarningRow: View {
+    let entry: EarningEntry
+    let onDelete: () -> Void
+
+    var body: some View {
+        EQCard {
+            HStack(spacing: EQSpacing.md) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: EQRadius.sm, style: .continuous)
+                        .fill(Color.eqMutedBrown)
+                        .frame(width: 40, height: 40)
+                    Image(systemName: entry.categoryIcon)
+                        .font(.body)
+                        .foregroundStyle(Color.eqSaddleBrown)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(entry.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.eqDarkBrown)
+                    HStack(spacing: EQSpacing.xs) {
+                        if let cat = entry.category {
+                            Text(cat)
+                                .font(.caption)
+                                .foregroundStyle(Color.eqMuted)
+                            Text("·").font(.caption).foregroundStyle(Color.eqMuted)
+                        }
+                        Text(entry.date.toDisplayDate(format: "MMM d, yyyy"))
+                            .font(.caption)
+                            .foregroundStyle(Color.eqMuted)
+                    }
+                    if let notes = entry.notes, !notes.isEmpty {
+                        Text(notes)
+                            .font(.caption)
+                            .foregroundStyle(Color.eqMuted)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer()
+
+                Text(entry.amount.currencyString)
+                    .font(.eqFont(16, weight: .bold))
+                    .foregroundStyle(Color.eqDarkBrown)
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+}
+
+// MARK: - Add Earning View
+
+struct AddEarningView: View {
+    let horseId: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var title = ""
+    @State private var amountText = ""
+    @State private var category = EarningEntry.categories[0]
+    @State private var date = Date()
+    @State private var notes = ""
+    @State private var isSaving = false
+    @State private var error: String?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.eqWarmWhite.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: EQSpacing.md) {
+                        if let error {
+                            ErrorBanner(message: error) { self.error = nil }
+                        }
+
+                        EQTextField(label: "Description", placeholder: "e.g. Grand Prix Win", text: $title)
+
+                        // Amount
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Amount")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.eqMuted)
+                            HStack {
+                                Text("$")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(Color.eqSaddleBrown)
+                                TextField("0.00", text: $amountText)
+                                    .keyboardType(.decimalPad)
+                                    .font(.body)
+                            }
+                            .padding(.horizontal, EQSpacing.md)
+                            .padding(.vertical, 14)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                                    .strokeBorder(Color.eqLightTan, lineWidth: 1)
+                            )
+                        }
+
+                        // Category picker
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Category")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.eqMuted)
+                            Menu {
+                                ForEach(EarningEntry.categories, id: \.self) { cat in
+                                    Button(cat) { category = cat }
+                                }
+                            } label: {
+                                HStack {
+                                    Text(category)
+                                        .font(.body)
+                                        .foregroundStyle(Color.eqDarkBrown)
+                                    Spacer()
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.eqMuted)
+                                }
+                                .padding(.horizontal, EQSpacing.md)
+                                .padding(.vertical, 14)
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                                        .strokeBorder(Color.eqLightTan, lineWidth: 1)
+                                )
+                            }
+                        }
+
+                        // Date picker
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Date")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.eqMuted)
+                            DatePicker("", selection: $date, displayedComponents: .date)
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                                .padding(.horizontal, EQSpacing.md)
+                                .padding(.vertical, 10)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: EQRadius.md, style: .continuous)
+                                        .strokeBorder(Color.eqLightTan, lineWidth: 1)
+                                )
+                        }
+
+                        EQTextField(label: "Notes (optional)", placeholder: "Additional details", text: $notes)
+
+                        EQPrimaryButton(title: "Save Earning", isLoading: isSaving) {
+                            save()
+                        }
+                        .disabled(title.isEmpty || amountText.isEmpty)
+                        .opacity(title.isEmpty || amountText.isEmpty ? 0.5 : 1)
+                    }
+                    .padding(EQSpacing.md)
+                    .padding(.bottom, EQSpacing.xxl)
+                }
+            }
+            .navigationTitle("Add Earning")
+            .navigationBarTitleDisplayMode(.inline)
+            .eqNavAppearance()
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(.white)
+                }
+            }
+        }
+    }
+
+    private func save() {
+        guard let amount = Double(amountText.replacingOccurrences(of: ",", with: ".")),
+              amount > 0 else {
+            error = "Please enter a valid amount."
+            return
+        }
+        isSaving = true
+        let entry = EarningEntry(
+            id: UUID().uuidString,
+            horse_id: horseId,
+            amount: amount,
+            title: title.trimmingCharacters(in: .whitespaces),
+            category: category,
+            date: date.iso8601DateString,
+            notes: notes.isEmpty ? nil : notes,
+            created_date: Date().iso8601DateString
+        )
+        Task {
+            do {
+                if isDemoMode {
+                    await MainActor.run { dismiss() }
+                    return
+                }
+                #if targetEnvironment(simulator)
+                await MainActor.run { dismiss() }
+                return
+                #endif
+                _ = try await SupabaseClient.shared.addEarning(entry)
+                await MainActor.run { dismiss() }
+            } catch {
+                await MainActor.run {
+                    self.error = error.localizedDescription
+                    isSaving = false
+                }
+            }
         }
     }
 }

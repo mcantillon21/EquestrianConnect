@@ -400,6 +400,24 @@ final class SupabaseClient {
         return try await restRequest(method: "GET", path: "profiles", queryItems: qi)
     }
 
+    // MARK: - Earning Entries
+
+    func getEarnings(horseId: String) async throws -> [EarningEntry] {
+        return try await filter(
+            table: "earning_entries",
+            query: [URLQueryItem(name: "horse_id", value: "eq.\(horseId)")],
+            order: "date.desc"
+        )
+    }
+
+    func addEarning(_ entry: EarningEntry) async throws -> EarningEntry {
+        return try await create(table: "earning_entries", data: entry)
+    }
+
+    func deleteEarning(id: String) async throws {
+        try await delete(table: "earning_entries", id: id)
+    }
+
     func getTrainerByCode(_ code: String) async throws -> User {
         let qi = [URLQueryItem(name: "trainer_code", value: "eq.\(code)"),
                   URLQueryItem(name: "user_type", value: "eq.trainer")]
