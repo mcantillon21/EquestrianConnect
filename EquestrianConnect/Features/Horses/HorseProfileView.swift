@@ -288,7 +288,8 @@ private struct HorseHeroHeader: View {
 
 private struct OverviewTab: View {
     let horse: Horse
-    private let fields: [(String, String?)] = []
+    @State private var trainerName: String? = nil
+    @State private var ownerName: String? = nil
 
     var body: some View {
         VStack(spacing: EQSpacing.md) {
@@ -314,6 +315,7 @@ private struct OverviewTab: View {
                 .padding(.vertical, -8)
             }
         }
+        .task { await resolveNames() }
     }
 
     private var details: [(String, String?)] {
@@ -325,9 +327,38 @@ private struct OverviewTab: View {
             ("Age",             horse.age.map { "\($0) years" }),
             ("Discipline",      horse.discipline),
             ("Registration #",  horse.registration_number),
-            ("Owner",           horse.owner_id),
-            ("Trainer",         horse.trainer_id),
+            ("Owner",           ownerName ?? displayName(horse.owner_id)),
+            ("Trainer",         trainerName ?? displayName(horse.trainer_id)),
         ]
+    }
+
+    private func displayName(_ id: String?) -> String? {
+        guard let id, !id.isEmpty else { return nil }
+        if id.contains("@") { return String(id.split(separator: "@").first ?? Substring(id)).capitalized }
+        return nil
+    }
+
+    private func resolveNames() async {
+        guard !isDemoMode else { return }
+        #if targetEnvironment(simulator)
+        return
+        #endif
+        async let trainerTask: User? = resolve(id: horse.trainer_id)
+        async let ownerTask: User? = resolve(id: horse.owner_id)
+        let (trainer, owner) = await (trainerTask, ownerTask)
+        await MainActor.run {
+            trainerName = trainer?.displayName
+            ownerName = owner?.displayName
+        }
+    }
+
+    private func resolve(id: String?) async -> User? {
+        guard let id, !id.isEmpty else { return nil }
+        if id.contains("@") {
+            return try? await SupabaseClient.shared.getUserByEmail(id)
+        } else {
+            return try? await SupabaseClient.shared.get(table: "profiles", id: id)
+        }
     }
 }
 
