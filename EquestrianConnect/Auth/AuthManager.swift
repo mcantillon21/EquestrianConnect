@@ -134,13 +134,25 @@ final class AuthManager {
 
     // MARK: Role Selection
 
+    /// Sets the user's role and optionally links a trainer — all in one DB write.
+    /// Trainer lookup happens BEFORE setting user_type so navigation can't fire
+    /// prematurely while we're still waiting for the code lookup.
     @MainActor
-    func selectRole(_ role: String) async throws {
+    func selectRole(_ role: String, trainerCode: String? = nil) async throws {
         guard var updated = user else { return }
+
+        // Look up trainer FIRST (before changing user_type) so any error keeps
+        // the user on RoleSelectView rather than bouncing them to MainTabView.
+        if role == "owner", let code = trainerCode, !code.isEmpty {
+            let trainer = try await client.getTrainerByCode(code.uppercased())
+            updated.trainer_id = trainer.id
+        }
+
         updated.user_type = role
         if role == "trainer" && (updated.trainer_code == nil || updated.trainer_code!.isEmpty) {
             updated.trainer_code = Self.generateTrainerCode()
         }
+
         if isDemoMode {
             user = updated
             return

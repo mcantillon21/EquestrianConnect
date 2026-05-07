@@ -199,31 +199,34 @@ struct RoleSelectView: View {
             do {
                 try await auth.selectRole(role)
             } catch {
-                await MainActor.run { self.error = error.localizedDescription }
+                await MainActor.run {
+                    self.error = error.localizedDescription
+                    isLoading = false
+                }
             }
-            await MainActor.run { isLoading = false }
         }
     }
 
     private func commitWithCode() {
         isLoading = true
         error = nil
+        let code = trainerCode.count == 6 ? trainerCode : nil
         Task {
             do {
-                try await auth.selectRole("owner")
-                if trainerCode.count == 6 {
-                    try await auth.linkToTrainer(code: trainerCode)
-                }
+                // Single call: looks up trainer FIRST (before setting role),
+                // then saves user_type + trainer_id together in one update.
+                try await auth.selectRole("owner", trainerCode: code)
             } catch SupabaseError.notFound {
                 await MainActor.run {
-                    error = "Trainer code not found. Check with your trainer and try again."
+                    error = "Trainer code not found. Make sure your trainer has opened their Profile and generated a code, then try again."
                     isLoading = false
                 }
-                return
             } catch {
-                await MainActor.run { self.error = error.localizedDescription }
+                await MainActor.run {
+                    self.error = error.localizedDescription
+                    isLoading = false
+                }
             }
-            await MainActor.run { isLoading = false }
         }
     }
 }
